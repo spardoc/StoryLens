@@ -20,5 +20,5 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "write_vision_ai"
-include(":app")
- 
+include(":app", ":opencv")
+project(":opencv").projectDir = file("opencv")

@@ -1,3 +1,6 @@
+import com.android.build.api.dsl.Packaging
+import org.apache.tools.ant.util.JavaEnvUtils.VERSION_1_8
+
 plugins {
     alias(libs.plugins.android.application)
 }
@@ -39,6 +42,9 @@ android {
         viewBinding = true
 
     }
+    buildToolsVersion = "34.0.0"
+    ndkVersion = "26.1.10909125"
+
 }
 
 dependencies {
@@ -46,6 +52,7 @@ dependencies {
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.constraintlayout)
+    implementation(libs.activity)
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
@@ -56,4 +63,5 @@ dependencies {
     implementation(libs.gson)
     implementation(libs.glide)
     implementation(libs.org.json)
+    add("implementation", project(":opencv"))
 }

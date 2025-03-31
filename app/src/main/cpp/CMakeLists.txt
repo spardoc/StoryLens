@@ -10,6 +10,11 @@ cmake_minimum_required(VERSION 3.22.1)
 # with ${CMAKE_PROJECT_NAME} (both CMake variables are in-sync within the top level
 # build script scope).
 project("write_vision_ai")
+set(OpenCV_STATIC on)
+set(OpenCV_DIR /home/grizz/Open_CV_Tools/opencv-4.10.0-android-sdk/OpenCV-android-sdk/sdk/native/jni)
+find_package(OpenCV REQUIRED)
+include_directories(/home/grizz/Open_CV_Tools/opencv-4.10.0-android-sdk/OpenCV-android-sdk/sdk/native/jni/include)
+
 
 # Creates and names a library, sets it as either STATIC
 # or SHARED, and provides the relative paths to its source code.
@@ -28,10 +33,17 @@ add_library(${CMAKE_PROJECT_NAME} SHARED
         # List C/C++ source files with relative paths to this CMakeLists.txt.
         native-lib.cpp)
 
+find_library(
+        jnigraphics-lib jnigraphics
+)
+
 # Specifies libraries CMake should link to your target library. You
 # can link libraries from various origins, such as libraries defined in this
 # build script, prebuilt third-party libraries, or Android system libraries.
 target_link_libraries(${CMAKE_PROJECT_NAME}
         # List libraries link to the target library
         android
+        ${OpenCV_LIBS}
+        ${jnigraphics-lib}
+        ${log-lib}
         log)

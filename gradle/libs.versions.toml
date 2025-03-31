@@ -12,6 +12,7 @@ gson = "2.10"
 glide = "4.15.1"
 json = "20210307"
 dotenv = "5.2.2"
+activity = "1.8.0"
 
 [libraries]
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -29,6 +30,7 @@ glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }
 glide-compiler = { module = "com.github.bumptech.glide:compiler", version.ref = "glide" }
 org-json = { module = "org.json:json", version.ref = "json" }
 dotenv = { group = "io.github.cdimascio", name = "dotenv-java", version.ref = "dotenv" }
+activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

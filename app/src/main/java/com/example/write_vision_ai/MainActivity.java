@@ -56,9 +56,9 @@ public class MainActivity extends AppCompatActivity {
         recyclerView.setAdapter(imageAdapter);
 
         OkHttpClient client = new OkHttpClient.Builder()
-                .connectTimeout(120, TimeUnit.SECONDS)
-                .writeTimeout(120, TimeUnit.SECONDS)
-                .readTimeout(120, TimeUnit.SECONDS)
+                .connectTimeout(30, TimeUnit.SECONDS)
+                .writeTimeout(30, TimeUnit.SECONDS)
+                .readTimeout(30, TimeUnit.SECONDS)
                 .addInterceptor(new Interceptor() {
                     @Override
                     public okhttp3.Response intercept(Chain chain) throws IOException {
@@ -70,7 +70,7 @@ public class MainActivity extends AppCompatActivity {
                 .build();
 
         Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl("https://dashscope-intl.aliyuncs.com/api/v1/")
+                .baseUrl("https://api.openai.com/")
                 .addConverterFactory(GsonConverterFactory.create())
                 .client(client)
                 .build();
@@ -101,45 +101,35 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void generateImage(String prompt) {
-        Map<String, Object> input = new HashMap<>();
-        input.put("prompt", prompt);
-        input.put("seed", System.currentTimeMillis());  // Para generar imágenes únicas
-
         Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("input", input);
+        requestBody.put("model", "dall-e-3");
+        requestBody.put("prompt", prompt);
+        requestBody.put("n", 1);
+        requestBody.put("size", "1024x1024");
 
-        apiService.generateImage(requestBody).enqueue(new Callback<QwenResponse>() {
+        apiService.generateImage(requestBody).enqueue(new Callback<ImageResponse>() {
             @Override
-            public void onResponse(Call<QwenResponse> call, Response<QwenResponse> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    String outputText = (String) response.body().getOutput().get("text");
-                    String imageUrl = extractImageUrl(outputText);
+            public void onResponse(Call<ImageResponse> call, Response<ImageResponse> response) {
+                Log.d("API_RESPONSE", "Response Code: " + response.code());
 
-                    if (imageUrl != null) {
-                        imageUrls.add(imageUrl);
-                        imageAdapter.notifyItemInserted(imageUrls.size() - 1);
-                    } else {
-                        Toast.makeText(MainActivity.this, "No se encontró imagen para: " + prompt, Toast.LENGTH_SHORT).show();
-                    }
+                if (response.isSuccessful() && response.body() != null) {
+                    String imageUrl = response.body().getData().get(0).getUrl();
+                    Log.d("API_RESPONSE", "Image URL: " + imageUrl);
+
+                    imageUrls.add(imageUrl);
+                    imageAdapter.notifyItemInserted(imageUrls.size() - 1);
                 } else {
+                    Log.e("API_RESPONSE", "Error en la respuesta: " + response.errorBody());
                     Toast.makeText(MainActivity.this, "Error en la respuesta", Toast.LENGTH_SHORT).show();
                 }
             }
 
             @Override
-            public void onFailure(Call<QwenResponse> call, Throwable t) {
+            public void onFailure(Call<ImageResponse> call, Throwable t) {
+                Log.e("API_ERROR", "Error en la conexión: " + t.getMessage());
                 Toast.makeText(MainActivity.this, "Error en la conexión", Toast.LENGTH_SHORT).show();
             }
         });
-    }
-
-    private String extractImageUrl(String text) {
-        if (text != null && text.contains("![](") && text.contains(")")) {
-            int startIndex = text.indexOf("![](") + 4;
-            int endIndex = text.indexOf(")", startIndex);
-            return text.substring(startIndex, endIndex);
-        }
-        return null;
     }
 }
 
