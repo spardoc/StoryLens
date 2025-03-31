@@ -1,23 +1,22 @@
 package com.example.write_vision_ai;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import android.os.Bundle;
+import android.util.Log;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.example.write_vision_ai.databinding.ActivityMainBinding;
 
-import android.util.Log;
-import android.widget.Button;
-import android.widget.ImageView;
-import android.widget.Toast;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -33,10 +32,13 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class MainActivity extends AppCompatActivity {
 
     private Button btnGenerate;
+    private EditText etPrompt;
+    private RecyclerView recyclerView;
+    private ImageAdapter imageAdapter;
     private ApiService apiService;
-    private ImageView imageView;
-
     private ActivityMainBinding binding;
+
+    private final List<String> imageUrls = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,12 +48,17 @@ public class MainActivity extends AppCompatActivity {
         setContentView(binding.getRoot());
 
         btnGenerate = findViewById(R.id.btnGenerate);
-        imageView = findViewById(R.id.imageView);
+        etPrompt = findViewById(R.id.etPrompt);
+        recyclerView = findViewById(R.id.recyclerView);
+
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        imageAdapter = new ImageAdapter(imageUrls);
+        recyclerView.setAdapter(imageAdapter);
 
         OkHttpClient client = new OkHttpClient.Builder()
-                .connectTimeout(30, TimeUnit.SECONDS)
-                .writeTimeout(30, TimeUnit.SECONDS)
-                .readTimeout(30, TimeUnit.SECONDS)
+                .connectTimeout(120, TimeUnit.SECONDS)
+                .writeTimeout(120, TimeUnit.SECONDS)
+                .readTimeout(120, TimeUnit.SECONDS)
                 .addInterceptor(new Interceptor() {
                     @Override
                     public okhttp3.Response intercept(Chain chain) throws IOException {
@@ -62,65 +69,65 @@ public class MainActivity extends AppCompatActivity {
                 })
                 .build();
 
-
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl("https://dashscope-intl.aliyuncs.com/api/v1/")
                 .addConverterFactory(GsonConverterFactory.create())
                 .client(client)
                 .build();
 
-
         apiService = retrofit.create(ApiService.class);
 
-        btnGenerate.setOnClickListener(view -> generateImage());
-
+        btnGenerate.setOnClickListener(view -> generateImages());
     }
 
-    public native String stringFromJNI();
+    private void generateImages() {
+        String userInput = etPrompt.getText().toString().trim();
 
-    private void generateImage() {
+        if (userInput.isEmpty()) {
+            Toast.makeText(this, "Por favor, ingresa al menos un prompt", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String[] userPrompts = userInput.split("\n|,");
+
+        imageUrls.clear();
+        imageAdapter.notifyDataSetChanged();
+
+        for (String prompt : userPrompts) {
+            if (!prompt.trim().isEmpty()) {
+                generateImage(prompt.trim());
+            }
+        }
+    }
+
+    private void generateImage(String prompt) {
         Map<String, Object> input = new HashMap<>();
-        input.put("prompt", "Genera una imagen de un robot ayudando a un niño a escribir en un cuaderno");
-        input.put("seed", 42);
+        input.put("prompt", prompt);
+        input.put("seed", System.currentTimeMillis());  // Para generar imágenes únicas
 
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("input", input);
 
-        Log.d("API_REQUEST", "Request Body: " + requestBody.toString());
-
         apiService.generateImage(requestBody).enqueue(new Callback<QwenResponse>() {
             @Override
             public void onResponse(Call<QwenResponse> call, Response<QwenResponse> response) {
-                // Log para verificar el estado de la respuesta
-                Log.d("API_RESPONSE", "Response Code: " + response.code());
-                Log.d("API_RESPONSE", "Response Body: " + (response.body() != null ? response.body().toString() : "null"));
-
                 if (response.isSuccessful() && response.body() != null) {
                     String outputText = (String) response.body().getOutput().get("text");
-                    Log.d("API_RESPONSE", "Output Text: " + outputText);
-
                     String imageUrl = extractImageUrl(outputText);
-                    Log.d("API_RESPONSE", "Extracted Image URL: " + imageUrl);
 
                     if (imageUrl != null) {
-
-                        Glide.with(MainActivity.this)
-                                .load(imageUrl)
-                                .into(imageView);
-                        Log.d("IMAGE_LOAD", "Image URL loaded successfully");
+                        imageUrls.add(imageUrl);
+                        imageAdapter.notifyItemInserted(imageUrls.size() - 1);
                     } else {
-                        Log.e("IMAGE_LOAD", "No image URL found");
-                        Toast.makeText(MainActivity.this, "No se encontró imagen en la respuesta", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(MainActivity.this, "No se encontró imagen para: " + prompt, Toast.LENGTH_SHORT).show();
                     }
                 } else {
-                    Log.e("API_RESPONSE", "Error en la respuesta, Código: " + response.code());
                     Toast.makeText(MainActivity.this, "Error en la respuesta", Toast.LENGTH_SHORT).show();
                 }
             }
 
             @Override
             public void onFailure(Call<QwenResponse> call, Throwable t) {
-                Log.e("API_ERROR", "Error en la conexión: " + t.getMessage());
                 Toast.makeText(MainActivity.this, "Error en la conexión", Toast.LENGTH_SHORT).show();
             }
         });
@@ -128,15 +135,12 @@ public class MainActivity extends AppCompatActivity {
 
     private String extractImageUrl(String text) {
         if (text != null && text.contains("![](") && text.contains(")")) {
-
             int startIndex = text.indexOf("![](") + 4;
             int endIndex = text.indexOf(")", startIndex);
-            if (startIndex != -1 && endIndex != -1) {
-                return text.substring(startIndex, endIndex);
-            }
+            return text.substring(startIndex, endIndex);
         }
         return null;
     }
-
-
 }
+
+
