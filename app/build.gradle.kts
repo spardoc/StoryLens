@@ -63,5 +63,8 @@ dependencies {
     implementation(libs.gson)
     implementation(libs.glide)
     implementation(libs.org.json)
-    add("implementation", project(":opencv"))
+    implementation(libs.camerax.core)
+    implementation(libs.camerax.camera2)
+    implementation(libs.camerax.lifecycle)
+    implementation(libs.camerax.view)
 }
