@@ -35,6 +35,8 @@ add_library(${CMAKE_PROJECT_NAME} SHARED
 
 find_library(
         jnigraphics-lib jnigraphics
+        log-lib
+        log
 )
 
 # Specifies libraries CMake should link to your target library. You

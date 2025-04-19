@@ -3,6 +3,7 @@ package com.example.write_vision_ai;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -10,7 +11,6 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Toast;
-import android.Manifest;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -23,18 +23,32 @@ import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import android.Manifest;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 
 public class CameraActivity extends AppCompatActivity {
+
+    static {
+        System.loadLibrary("write_vision_ai");
+    }
+
+    // Assets
+    InputStream is = getAssets().open("frames/frame_1.png");
+    Bitmap bitmap = BitmapFactory.decodeStream(is);
 
     private PreviewView previewView;
     private ImageView imageCaptureView;
     private Button btnCapture, btnConfirm, btnRetry;
     private LinearLayout controlsLayout;
     private ImageCapture imageCapture;
+
+    public CameraActivity() throws IOException {
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -128,10 +142,10 @@ public class CameraActivity extends AppCompatActivity {
     }
 
     private void confirmPhoto() {
-        // Aquí llama a tu método native con el Bitmap:
-        // byte[] data = bitmapToNV21(...);
-        // byte[] result = processImageNative(data, bmp.getWidth(), bmp.getHeight());
         Toast.makeText(this, "Foto confirmada y enviada para procesamiento", Toast.LENGTH_SHORT).show();
+        Bitmap original = ((BitmapDrawable) imageCaptureView.getDrawable()).getBitmap();
+        Bitmap processed = processImage(original);
+        imageCaptureView.setImageBitmap(processed);
     }
 
     @Override
@@ -147,16 +161,5 @@ public class CameraActivity extends AppCompatActivity {
         }
     }
 
-
-    public void xd(int requestCode,
-                                           @NonNull String[] permissions,
-                                           @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == 100 && grantResults.length > 0 &&
-                grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            startCamera();
-        } else {
-            Toast.makeText(this, "Permiso de cámara denegado", Toast.LENGTH_SHORT).show();
-        }
-    }
+    public native Bitmap processImage(Bitmap inputBitmap);
 }
