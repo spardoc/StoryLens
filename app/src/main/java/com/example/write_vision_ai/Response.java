@@ -2,7 +2,7 @@ package com.example.write_vision_ai;
 
 import java.util.List;
 
-public class GptResponse {
+public class Response {
     private List<Choice> choices;
 
     public List<Choice> getChoices() {

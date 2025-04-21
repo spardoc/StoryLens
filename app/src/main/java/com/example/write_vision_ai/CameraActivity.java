@@ -1,11 +1,11 @@
 package com.example.write_vision_ai;
 
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -27,19 +27,18 @@ import android.Manifest;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.ByteBuffer;
 
 public class CameraActivity extends AppCompatActivity {
 
+    private static final int REQUEST_FRAME = 101;
+
     static {
         System.loadLibrary("write_vision_ai");
     }
-
-    // Assets
-    InputStream is = getAssets().open("frames/frame_1.png");
-    Bitmap bitmap = BitmapFactory.decodeStream(is);
 
     private PreviewView previewView;
     private ImageView imageCaptureView;
@@ -142,11 +141,27 @@ public class CameraActivity extends AppCompatActivity {
     }
 
     private void confirmPhoto() {
-        Toast.makeText(this, "Foto confirmada y enviada para procesamiento", Toast.LENGTH_SHORT).show();
         Bitmap original = ((BitmapDrawable) imageCaptureView.getDrawable()).getBitmap();
         Bitmap processed = processImage(original);
-        imageCaptureView.setImageBitmap(processed);
+
+        // Guarda en cache
+        try {
+            File cache = new File(getCacheDir(), "text_processed.png");
+            FileOutputStream fos = new FileOutputStream(cache);
+            processed.compress(Bitmap.CompressFormat.PNG, 100, fos);
+            fos.close();
+
+            Intent intent = new Intent(this, FrameSelectionActivity.class);
+            intent.putExtra("image_path", cache.getAbsolutePath());
+            startActivityForResult(intent, REQUEST_FRAME);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            Toast.makeText(this, "Error al guardar imagen", Toast.LENGTH_SHORT).show();
+        }
     }
+
+
 
     @Override
     public void onRequestPermissionsResult(int requestCode,
@@ -162,4 +177,19 @@ public class CameraActivity extends AppCompatActivity {
     }
 
     public native Bitmap processImage(Bitmap inputBitmap);
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_FRAME && resultCode == RESULT_OK) {
+            String framedPath = data.getStringExtra("framed_image_path");
+            if (framedPath != null) {
+                Bitmap framed = BitmapFactory.decodeFile(framedPath);
+                // Aquí ya tienes la imagen del texto con su viñeta
+                imageCaptureView.setImageBitmap(framed);
+                // Y si quieres, puedes continuar el flujo de insertar en el cómic
+            }
+        }
+    }
+
 }
