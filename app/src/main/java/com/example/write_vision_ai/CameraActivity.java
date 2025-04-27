@@ -151,7 +151,7 @@ public class CameraActivity extends AppCompatActivity {
             processed.compress(Bitmap.CompressFormat.PNG, 100, fos);
             fos.close();
 
-            Intent intent = new Intent(this, FrameSelectionActivity.class);
+            Intent intent = new Intent(this, DrawFrameActivity.class);
             intent.putExtra("image_path", cache.getAbsolutePath());
             startActivityForResult(intent, REQUEST_FRAME);
 

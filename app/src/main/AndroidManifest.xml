@@ -30,7 +30,7 @@
             </intent-filter>
         </activity>
         <activity android:name=".CameraActivity" />
-        <activity android:name=".FrameSelectionActivity"/>
+        <activity android:name=".DrawFrameActivity"/>
     </application>
 
 </manifest>

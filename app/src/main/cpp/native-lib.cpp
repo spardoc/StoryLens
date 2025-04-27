@@ -137,3 +137,95 @@ Java_com_example_write_1vision_1ai_CameraActivity_processImage(JNIEnv* env,
     // Convierte Bitmap a Mat (Android bitmap to OpenCV Mat)
     Mat bitmapToMat(JNIEnv *env, jobject bitmap);
 }
+
+extern "C"
+JNIEXPORT jobject JNICALL
+Java_com_example_write_1vision_1ai_DrawFrameActivity_processDrawing(
+        JNIEnv* env,
+        jobject /* this */,
+        jobject textBitmap,
+        jobject drawingBitmap) {
+
+    const char* TAG = "DrawFrameActivity";
+    AndroidBitmapInfo infoText, infoDraw;
+    void* pixelsText = nullptr;
+    void* pixelsDraw = nullptr;
+
+    // 1) Obtener info y lock
+    if (AndroidBitmap_getInfo(env, textBitmap, &infoText) != ANDROID_BITMAP_RESULT_SUCCESS ||
+        AndroidBitmap_getInfo(env, drawingBitmap, &infoDraw) != ANDROID_BITMAP_RESULT_SUCCESS ||
+        infoText.width  != infoDraw.width ||
+        infoText.height != infoDraw.height ||
+        AndroidBitmap_lockPixels(env, textBitmap,  &pixelsText) != ANDROID_BITMAP_RESULT_SUCCESS ||
+        AndroidBitmap_lockPixels(env, drawingBitmap, &pixelsDraw) != ANDROID_BITMAP_RESULT_SUCCESS) {
+        __android_log_print(ANDROID_LOG_ERROR, TAG, "Error al bloquear bitmaps");
+        return nullptr;
+    }
+
+    // 2) Clonar Mats
+    Mat textMatView(infoText.height, infoText.width, CV_8UC4, pixelsText);
+    Mat drawMatView(infoDraw.height, infoDraw.width, CV_8UC4, pixelsDraw);
+    Mat textMat = textMatView.clone();
+    Mat drawMat = drawMatView.clone();
+
+    AndroidBitmap_unlockPixels(env, textBitmap);
+    AndroidBitmap_unlockPixels(env, drawingBitmap);
+
+    // 3) Extraer canal alfa y umbralizar
+    std::vector<Mat> chs;
+    cv::split(drawMat, chs);
+    Mat strokeMask = chs[3];
+    cv::threshold(strokeMask, strokeMask, 10, 255, cv::THRESH_BINARY);
+
+    // 4) Cierre morfológico (opcional; puedes ajustar o eliminar)
+    int gap = 50;
+    Mat isoK = getStructuringElement(MORPH_ELLIPSE, Size(gap, gap));
+    cv::morphologyEx(strokeMask, strokeMask, cv::MORPH_CLOSE, isoK);
+
+    // 5) Encontrar y rellenar contornos
+    std::vector<std::vector<Point>> contours;
+    cv::findContours(strokeMask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+
+    Mat regionMask = Mat::zeros(strokeMask.size(), CV_8UC1);
+    cv::drawContours(regionMask, contours, -1, Scalar(255), cv::FILLED);
+
+    // 6) Erosión suave para recortar filtraciones horizontales
+    int e = 20;
+    Mat eKernel = getStructuringElement(MORPH_ELLIPSE, Size(e,e));
+    cv::erode(regionMask, regionMask, eKernel);
+
+    // 7) **Dilatar sólo en Y** para permitir un pequeño overshoot arriba/abajo
+    int overshootY = 420;  // píxeles extra arriba y abajo
+    Mat vertKernel = getStructuringElement(MORPH_RECT, Size(1, overshootY));
+    cv::dilate(regionMask, regionMask, vertKernel);
+
+    // 8) Copiar interior de textMat a fondo transparente
+    cv::Mat result = cv::Mat::zeros(textMat.size(), textMat.type());
+    result.setTo(cv::Scalar(0, 0, 0, 0));  // transparent background
+    textMat.copyTo(result, regionMask);
+
+    // 9) Convertir a Bitmap de salida
+    jclass bmpCls = env->FindClass("android/graphics/Bitmap");
+    jmethodID createBmp = env->GetStaticMethodID(
+            bmpCls, "createBitmap",
+            "(IILandroid/graphics/Bitmap$Config;)Landroid/graphics/Bitmap;");
+    jclass cfgCls = env->FindClass("android/graphics/Bitmap$Config");
+    jfieldID fid = env->GetStaticFieldID(cfgCls, "ARGB_8888", "Landroid/graphics/Bitmap$Config;");
+    jobject cfg = env->GetStaticObjectField(cfgCls, fid);
+
+    jobject outBmp = env->CallStaticObjectMethod(
+            bmpCls, createBmp,
+            (jint)infoText.width, (jint)infoText.height, cfg);
+
+    void* outPixels = nullptr;
+    if (AndroidBitmap_lockPixels(env, outBmp, &outPixels) == ANDROID_BITMAP_RESULT_SUCCESS) {
+        Mat outMat(infoText.height, infoText.width, CV_8UC4, outPixels);
+        result.copyTo(outMat);
+        AndroidBitmap_unlockPixels(env, outBmp);
+    } else {
+        __android_log_print(ANDROID_LOG_ERROR, TAG, "No se pudo bloquear outputBitmap");
+        return nullptr;
+    }
+
+    return outBmp;
+}
