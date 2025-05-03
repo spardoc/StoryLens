@@ -6,64 +6,70 @@
 using namespace cv;
 static const char* TAG = "NativeProcessor";
 
-// Constantes enteras
-constexpr int DENOISE_FILTER_SIZE = 9;
-constexpr int DENOISE_FILTER_SIGMA_COLOR = 75;
-constexpr int DENOISE_FILTER_SIGMA_SPACE = 75;
-constexpr int CLAHE_TILE_SIZE = 8;
-constexpr int USM_THRESHOLD = 0;
+// ——————————————
+//  Parámetros más suaves
+// ——————————————
+constexpr int   DENOISE_FILTER_SIZE       = 7;     // pequeño kernel
+constexpr int   DENOISE_FILTER_SIGMA_COLOR= 50;    // menos color smoothing
+constexpr int   DENOISE_FILTER_SIGMA_SPACE= 50;    // menos edge smoothing
 
-// Constantes flotantes
-constexpr double CLAHE_CLIP_LIMIT = 3.0;
-constexpr double USM_SIGMA = 3.0;
-constexpr double USM_AMOUNT = 1.5;
+constexpr double CLAHE_CLIP_LIMIT         = 1.5;   // menos contraste
+constexpr int    CLAHE_TILE_SIZE          = 8;
+
+constexpr double USM_SIGMA                = 1.0;   // desenfoque más ligero
+constexpr double USM_AMOUNT               = 1.0;   // máscara menos marcada
+
+constexpr float  BLEND_ALPHA              = 0.7f;  // 70% procesado + 30% original
 
 
 void processImageInternal(const Mat& input, Mat& output) {
-    // 1. RGBA -> BGR
-    Mat bgr;
-    cvtColor(input, bgr, COLOR_RGBA2BGR);
+    // 1) Pasamos a BGR
+    Mat bgr;  cvtColor(input, bgr, COLOR_RGBA2BGR);
 
-    // 2. Reduce noise but keep edges
+    // 2) Denoise suave
     Mat denoised;
     bilateralFilter(bgr, denoised,
                     DENOISE_FILTER_SIZE,
                     DENOISE_FILTER_SIGMA_COLOR,
                     DENOISE_FILTER_SIGMA_SPACE);
 
-    // 3. Contrast enhancement in LAB space
+    // 3) CLAHE ligero en L-channel
     Mat lab;
     cvtColor(denoised, lab, COLOR_BGR2Lab);
-    std::vector<Mat> labChannels;
-    split(lab, labChannels);
+    std::vector<Mat> ch(3);
+    split(lab, ch);
     Ptr<CLAHE> clahe = createCLAHE(CLAHE_CLIP_LIMIT, Size(CLAHE_TILE_SIZE, CLAHE_TILE_SIZE));
-    clahe->apply(labChannels[0], labChannels[0]);
-    merge(labChannels, lab);
+    clahe->apply(ch[0], ch[0]);
+    merge(ch, lab);
     Mat contrastEnhanced;
     cvtColor(lab, contrastEnhanced, COLOR_Lab2BGR);
 
-    // 4. Sharpen via Unsharp Mask
+    // 4) Unsharp mask muy suave
     Mat blurred;
     GaussianBlur(contrastEnhanced, blurred, Size(), USM_SIGMA);
     Mat usm;
-    addWeighted(contrastEnhanced, USM_AMOUNT,
-                blurred, - (USM_AMOUNT - 1.0),
+    addWeighted(contrastEnhanced, 1.0 + USM_AMOUNT,
+                blurred, -USM_AMOUNT,
                 0, usm);
 
-    // 5. Convert to grayscale
+    // 5) Convertir a gris y denoise final muy ligero
     Mat gray;
     cvtColor(usm, gray, COLOR_BGR2GRAY);
 
-    // 6. Further denoise grayscale for pencil strokes
     Mat finalDenoised;
-    fastNlMeansDenoising(gray, finalDenoised, 30);
+    // valor h más bajo para conservar detalle
+    fastNlMeansDenoising(gray, finalDenoised, 15, 7, 21);
 
-    // 7. Optional adaptive histogram equalization
-    Ptr<CLAHE> claheGray = createCLAHE(2.0, Size(CLAHE_TILE_SIZE, CLAHE_TILE_SIZE));
-    claheGray->apply(finalDenoised, finalDenoised);
+    // 6) Mezcla con el original gris para suavizar
+    Mat origGray;
+    cvtColor(bgr, origGray, COLOR_BGR2GRAY);
+    Mat blended;
+    addWeighted(finalDenoised, BLEND_ALPHA,
+                origGray, 1.0f - BLEND_ALPHA,
+                0, blended);
 
-    // 8. Convert back to RGBA
-    cvtColor(finalDenoised, output, COLOR_GRAY2RGBA);
+    // 7) A salida en RGBA
+    cvtColor(blended, output, COLOR_GRAY2RGBA);
 }
 // Superposición de marco sobre imagen
 void overlayFrame(const Mat& base, const Mat& frame, Mat& output) {
@@ -138,92 +144,218 @@ Java_com_example_write_1vision_1ai_CameraActivity_processImage(JNIEnv* env,
     Mat bitmapToMat(JNIEnv *env, jobject bitmap);
 }
 
+void makeRoundedRectMask(Mat& mask, int w, int h) {
+    int margin       = 150;             // margen interior al borde de la imagen
+    int cornerRadius = 200;             // radio de las esquinas redondeadas
+    // Coordenadas de la caja
+    int x1 = margin;
+    int y1 = margin;
+    int x2 = w - margin;
+    int y2 = h - margin;
+
+    // 2) Dibujar el cuerpo central (rectángulo horizontal)
+    rectangle(mask,
+              Point(x1 + cornerRadius, y1),
+              Point(x2 - cornerRadius, y2),
+              Scalar(255),
+              FILLED);
+
+    // 3) Dibujar el cuerpo vertical (rectángulo vertical)
+    rectangle(mask,
+              Point(x1, y1 + cornerRadius),
+              Point(x2, y2 - cornerRadius),
+              Scalar(255),
+              FILLED);
+
+    // 4) Añadir cuatro círculos en las esquinas
+    circle(mask,
+           Point(x1 + cornerRadius, y1 + cornerRadius),
+           cornerRadius,
+           Scalar(255),
+           FILLED);
+    circle(mask,
+           Point(x2 - cornerRadius, y1 + cornerRadius),
+           cornerRadius,
+           Scalar(255),
+           FILLED);
+    circle(mask,
+           Point(x1 + cornerRadius, y2 - cornerRadius),
+           cornerRadius,
+           Scalar(255),
+           FILLED);
+    circle(mask,
+           Point(x2 - cornerRadius, y2 - cornerRadius),
+           cornerRadius,
+           Scalar(255),
+           FILLED);
+}
+
+void makeEllipseMask(Mat& mask, int w, int h) {
+    Point center(w/2, h/2);
+    Size axes(w/2 - 10, h/3);
+    ellipse(mask, center, axes, 0, 0, 360, Scalar(255), FILLED);
+}
+
+void makeBubbleMask(Mat& mask, int w, int h) {
+    // Tamaño de los ejes de la elipse (ajustable)
+    Size axes(w / 2 - 10, h / 3);  // horizontal y vertical
+    // Radios base (con margen interior para que no toquen el borde)
+    double rx = (w / 2.5) - 10;
+    double ry = (h / 2.5) - 10;
+
+    int spikes      = 16;
+    double var      = 0.3;
+    Point center(w/2, h/2);
+    double angleStep   = CV_PI / spikes;
+    double angleOffset = angleStep / 2.0;
+
+    // Margen (en píxeles) para que no se peguen al borde
+    double margin = 5.0;
+
+    std::vector<Point> points;
+    points.reserve(spikes * 2);
+
+    for (int i = 0; i < spikes * 2; ++i) {
+        double angle = angleOffset + i * angleStep;
+        double cosA = std::cos(angle), sinA = std::sin(angle);
+
+        // radio “base” para valle o pico
+        double baseRX = (i % 2 == 0) ? rx : rx * (1.0 + var);
+        double baseRY = (i % 2 == 0) ? ry : ry * (1.0 + var);
+
+        // radio “ideal” en esa dirección (distancia real)
+        double desiredDist = std::hypot(baseRX * cosA, baseRY * sinA);
+
+        // calculamos hasta dónde podemos llegar sin salirme de la imagen:
+        // en X: según signo de cosA
+        double maxDistX = (cosA > 0)
+                          ? ( (w - margin - center.x) / cosA )
+                          : ( (0 + margin - center.x) / cosA );
+        // en Y: según signo de sinA
+        double maxDistY = (sinA > 0)
+                          ? ( (h - margin - center.y) / sinA )
+                          : ( (0 + margin - center.y) / sinA );
+
+        // nos quedamos con el más restrictivo (en valor absoluto)
+        double allowedDist = std::min(std::abs(maxDistX), std::abs(maxDistY));
+
+        // factor de escala si desiredDist > allowedDist
+        double scale = (desiredDist > allowedDist)
+                       ? (allowedDist / desiredDist)
+                       : 1.0;
+
+        // punto final
+        int x = static_cast<int>(center.x + baseRX * cosA * scale);
+        int y = static_cast<int>(center.y + baseRY * sinA * scale);
+        points.emplace_back(x, y);
+    }
+
+    // rellenar máscara y copiar como antes
+    fillPoly(mask, std::vector<std::vector<Point>>{points}, Scalar(255));
+}
+
+void makeCloudMask(Mat& mask, int w, int h) {
+    int r = std::min(w, h) / 5;  // radio un poco mayor
+    int y0 = h / 2 - r / 3;      // ligeramente arriba del centro
+
+    // Fila superior (7 círculos)
+    std::vector<Point> centersTop;
+    for (int i = 0; i < 3; ++i) {
+        float fx = 0.4f + 0.9f * (i / 6.0f);
+        int dy = (i % 2 == 0) ? -r / 6 : r / 8;
+        centersTop.emplace_back(Point(int(w * fx), y0 + dy));
+    }
+
+    // Fila inferior más baja (5 círculos)
+    std::vector<Point> centersBottom;
+    for (int i = 0; i < 4; ++i) {
+        float fx = 0.3f + 0.7f * (i / 4.0f);  // un poco más centrado
+        centersBottom.emplace_back(Point(int(w * fx), y0 + r * 0.9f));
+    }
+
+    // Dibujar todos los círculos
+    for (auto& c : centersTop)    circle(mask, c, r, Scalar(255), FILLED);
+    for (auto& c : centersBottom) circle(mask, c, r * 0.9f, Scalar(255), FILLED);  // más pequeños
+
+    // Círculo central inferior para dar base redondeada extra
+    circle(mask, Point(w / 2, y0 + r), r + 10, Scalar(255), FILLED);
+
+    // (opcional) suavizar un poco los bordes
+    Mat kernel = getStructuringElement(MORPH_ELLIPSE, Size(9, 9));
+    morphologyEx(mask, mask, MORPH_CLOSE, kernel);
+}
+
+
 extern "C"
 JNIEXPORT jobject JNICALL
-Java_com_example_write_1vision_1ai_DrawFrameActivity_processDrawing(
+Java_com_example_write_1vision_1ai_SelectFrameActivity_processDrawing(
         JNIEnv* env,
         jobject /* this */,
         jobject textBitmap,
-        jobject drawingBitmap) {
+        jobject /* drawingBitmap */,
+        jint shapeType) {
 
     const char* TAG = "DrawFrameActivity";
-    AndroidBitmapInfo infoText, infoDraw;
+    AndroidBitmapInfo info;
     void* pixelsText = nullptr;
-    void* pixelsDraw = nullptr;
 
-    // 1) Obtener info y lock
-    if (AndroidBitmap_getInfo(env, textBitmap, &infoText) != ANDROID_BITMAP_RESULT_SUCCESS ||
-        AndroidBitmap_getInfo(env, drawingBitmap, &infoDraw) != ANDROID_BITMAP_RESULT_SUCCESS ||
-        infoText.width  != infoDraw.width ||
-        infoText.height != infoDraw.height ||
-        AndroidBitmap_lockPixels(env, textBitmap,  &pixelsText) != ANDROID_BITMAP_RESULT_SUCCESS ||
-        AndroidBitmap_lockPixels(env, drawingBitmap, &pixelsDraw) != ANDROID_BITMAP_RESULT_SUCCESS) {
-        __android_log_print(ANDROID_LOG_ERROR, TAG, "Error al bloquear bitmaps");
+    // 1) Lock y clonar solo el bitmap de texto
+    if ( AndroidBitmap_getInfo(env, textBitmap, &info) != ANDROID_BITMAP_RESULT_SUCCESS ||
+         AndroidBitmap_lockPixels(env, textBitmap, &pixelsText) != ANDROID_BITMAP_RESULT_SUCCESS) {
+        __android_log_print(ANDROID_LOG_ERROR, TAG, "Error al lockear textBitmap");
         return nullptr;
     }
-
-    // 2) Clonar Mats
-    Mat textMatView(infoText.height, infoText.width, CV_8UC4, pixelsText);
-    Mat drawMatView(infoDraw.height, infoDraw.width, CV_8UC4, pixelsDraw);
-    Mat textMat = textMatView.clone();
-    Mat drawMat = drawMatView.clone();
-
+    Mat srcText(info.height, info.width, CV_8UC4, pixelsText);
+    Mat textMat = srcText.clone();
     AndroidBitmap_unlockPixels(env, textBitmap);
-    AndroidBitmap_unlockPixels(env, drawingBitmap);
 
-    // 3) Extraer canal alfa y umbralizar
-    std::vector<Mat> chs;
-    cv::split(drawMat, chs);
-    Mat strokeMask = chs[3];
-    cv::threshold(strokeMask, strokeMask, 10, 255, cv::THRESH_BINARY);
+    // 2) Crear máscara con forma de elipse centrada
+    int w = info.width, h = info.height;
 
-    // 4) Cierre morfológico (opcional; puedes ajustar o eliminar)
-    int gap = 50;
-    Mat isoK = getStructuringElement(MORPH_ELLIPSE, Size(gap, gap));
-    cv::morphologyEx(strokeMask, strokeMask, cv::MORPH_CLOSE, isoK);
+// 1) Crear máscara en negro
+    Mat mask = Mat::zeros(textMat.size(), CV_8UC1);
 
-    // 5) Encontrar y rellenar contornos
-    std::vector<std::vector<Point>> contours;
-    cv::findContours(strokeMask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+    switch (shapeType) {
+        case 0:  // Rectángulo redondeado
+            makeRoundedRectMask(mask, w, h);
+            break;
+        case 1:  // Elipse
+            makeEllipseMask(mask, w, h);
+            break;
+        case 2:  // Bocadillo
+            makeBubbleMask(mask, w, h);
+            break;
+        case 3:  // Nube
+            makeCloudMask(mask, w, h);
+            break;
+        default:
+            makeEllipseMask(mask, w, h);
+    }
 
-    Mat regionMask = Mat::zeros(strokeMask.size(), CV_8UC1);
-    cv::drawContours(regionMask, contours, -1, Scalar(255), cv::FILLED);
+    // 3) Aplicar máscara de nube sobre textMat
+    Mat result = Mat::zeros(textMat.size(), textMat.type());
+    textMat.copyTo(result, mask);
 
-    // 6) Erosión suave para recortar filtraciones horizontales
-    int e = 20;
-    Mat eKernel = getStructuringElement(MORPH_ELLIPSE, Size(e,e));
-    cv::erode(regionMask, regionMask, eKernel);
-
-    // 7) **Dilatar sólo en Y** para permitir un pequeño overshoot arriba/abajo
-    int overshootY = 420;  // píxeles extra arriba y abajo
-    Mat vertKernel = getStructuringElement(MORPH_RECT, Size(1, overshootY));
-    cv::dilate(regionMask, regionMask, vertKernel);
-
-    // 8) Copiar interior de textMat a fondo transparente
-    cv::Mat result = cv::Mat::zeros(textMat.size(), textMat.type());
-    result.setTo(cv::Scalar(0, 0, 0, 0));  // transparent background
-    textMat.copyTo(result, regionMask);
-
-    // 9) Convertir a Bitmap de salida
+    // 4) Convertir a Bitmap Android y devolver
     jclass bmpCls = env->FindClass("android/graphics/Bitmap");
     jmethodID createBmp = env->GetStaticMethodID(
             bmpCls, "createBitmap",
             "(IILandroid/graphics/Bitmap$Config;)Landroid/graphics/Bitmap;");
     jclass cfgCls = env->FindClass("android/graphics/Bitmap$Config");
-    jfieldID fid = env->GetStaticFieldID(cfgCls, "ARGB_8888", "Landroid/graphics/Bitmap$Config;");
+    jfieldID fid = env->GetStaticFieldID(cfgCls, "ARGB_8888",
+                                         "Landroid/graphics/Bitmap$Config;");
     jobject cfg = env->GetStaticObjectField(cfgCls, fid);
-
     jobject outBmp = env->CallStaticObjectMethod(
             bmpCls, createBmp,
-            (jint)infoText.width, (jint)infoText.height, cfg);
+            (jint)w, (jint)h, cfg);
 
     void* outPixels = nullptr;
     if (AndroidBitmap_lockPixels(env, outBmp, &outPixels) == ANDROID_BITMAP_RESULT_SUCCESS) {
-        Mat outMat(infoText.height, infoText.width, CV_8UC4, outPixels);
+        Mat outMat(h, w, CV_8UC4, outPixels);
         result.copyTo(outMat);
         AndroidBitmap_unlockPixels(env, outBmp);
     } else {
-        __android_log_print(ANDROID_LOG_ERROR, TAG, "No se pudo bloquear outputBitmap");
+        __android_log_print(ANDROID_LOG_ERROR, TAG, "Error al lockear outputBitmap");
         return nullptr;
     }
 

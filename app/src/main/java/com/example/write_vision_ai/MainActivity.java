@@ -14,7 +14,6 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import com.bumptech.glide.Glide;
 import android.Manifest;
 import com.example.write_vision_ai.databinding.ActivityMainBinding;
 
@@ -34,7 +33,7 @@ import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements ImageAdapter.OnAddTextClickListener{
 
     private Button btnGenerate;
     private EditText etPrompt;
@@ -45,10 +44,11 @@ public class MainActivity extends AppCompatActivity {
 
     private final List<String> imageUrls = new ArrayList<>();
 
+    private static final int REQ_CAPTURE_TEXT = 2001;
+    private String pendingImageUrl; // guardamos cuál imag
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        Intent intent = new Intent(MainActivity.this, CameraActivity.class);
-        startActivity(intent);
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -65,7 +65,7 @@ public class MainActivity extends AppCompatActivity {
         recyclerView = findViewById(R.id.recyclerView);
 
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        imageAdapter = new ImageAdapter(imageUrls);
+        imageAdapter = new ImageAdapter(imageUrls, this);
         recyclerView.setAdapter(imageAdapter);
 
         OkHttpClient client = new OkHttpClient.Builder()
@@ -91,6 +91,15 @@ public class MainActivity extends AppCompatActivity {
         apiService = retrofit.create(ApiService.class);
 
         btnGenerate.setOnClickListener(view -> generateImages());
+    }
+
+    @Override
+    public void onAddTextClicked(String imageUrl) {
+        // guardo la URL y lanzo CameraActivity para capturar el texto
+        pendingImageUrl = imageUrl;
+        Intent intent = new Intent(this, CameraActivity.class);
+        intent.putExtra("base_image_url", imageUrl);
+        startActivityForResult(intent, REQ_CAPTURE_TEXT);
     }
 
     private void generateImages() {
@@ -143,6 +152,24 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(MainActivity.this, "Error en la conexión", Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQ_CAPTURE_TEXT && resultCode == RESULT_OK) {
+            // la CameraActivity devuelve la ruta de la imagen de texto recortada
+            String textImagePath = data.getStringExtra("processed_text_path");
+            if (textImagePath != null && pendingImageUrl != null) {
+                // ahora lanzo SelectFrameActivity pasándole:
+                // 1) la URL de la imagen generada
+                // 2) la ruta local de la imagen de texto
+                Intent drawIntent = new Intent(this, SelectFrameActivity.class);
+                drawIntent.putExtra("base_image_url", pendingImageUrl);
+                drawIntent.putExtra("text_image_path", textImagePath);
+                startActivity(drawIntent);
+            }
+        }
     }
 }
 

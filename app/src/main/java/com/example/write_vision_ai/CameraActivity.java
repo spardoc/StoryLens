@@ -144,21 +144,27 @@ public class CameraActivity extends AppCompatActivity {
         Bitmap original = ((BitmapDrawable) imageCaptureView.getDrawable()).getBitmap();
         Bitmap processed = processImage(original);
 
-        // Guarda en cache
-        try {
-            File cache = new File(getCacheDir(), "text_processed.png");
-            FileOutputStream fos = new FileOutputStream(cache);
+        // guarda en cache...
+        File cache = new File(getCacheDir(), "text_processed.png");
+        try (FileOutputStream fos = new FileOutputStream(cache)) {
             processed.compress(Bitmap.CompressFormat.PNG, 100, fos);
-            fos.close();
-
-            Intent intent = new Intent(this, DrawFrameActivity.class);
-            intent.putExtra("image_path", cache.getAbsolutePath());
-            startActivityForResult(intent, REQUEST_FRAME);
-
         } catch (IOException e) {
             e.printStackTrace();
             Toast.makeText(this, "Error al guardar imagen", Toast.LENGTH_SHORT).show();
+            return;
         }
+
+        // Construimos el Intent a DrawFrameActivity:
+        Intent intent = new Intent(this, SelectFrameActivity.class);
+        intent.putExtra("text_image_path", cache.getAbsolutePath());
+
+        // Propagamos la URL base que recibimos de MainActivity:
+        String baseUrl = getIntent().getStringExtra("base_image_url");
+        if (baseUrl != null) {
+            intent.putExtra("base_image_url", baseUrl);
+        }
+
+        startActivityForResult(intent, REQUEST_FRAME);
     }
 
 

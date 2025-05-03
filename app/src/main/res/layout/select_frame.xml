@@ -5,10 +5,10 @@
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:padding="8dp"
     android:clipChildren="false"
     android:clipToPadding="false"
-    android:padding="8dp"
-    tools:context=".DrawFrameActivity">
+    tools:context=".SelectFrameActivity">
 
     <!-- Contenedor con la imagen de texto y la vista para dibujar la viñeta -->
     <FrameLayout
@@ -33,6 +33,13 @@
             android:layout_height="match_parent"
             android:background="@android:color/transparent" />
     </FrameLayout>
+
+    <!-- Spinner para seleccionar el contorno -->
+    <Spinner
+        android:id="@+id/spinnerShape"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:entries="@array/shape_options" />
 
     <!-- Botón para confirmar el dibujo de la viñeta -->
     <Button

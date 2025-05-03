@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/composeContainer"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- Imagen base de DALL·E, ocupa todo el fondo -->
+    <ImageView
+        android:id="@+id/baseImageView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="fitCenter"/>
+
+    <!-- Viñeta de texto draggable -->
+    <ImageView
+        android:id="@+id/draggableBubble"
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        android:layout_gravity="top|start"
+        android:visibility="gone"
+        android:contentDescription="Viñeta de texto"/>
+
+    <!-- Botón para “Confirmar composición” si quieres bloquear posición -->
+    <Button
+        android:id="@+id/btnFinishCompose"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Finalizar"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_margin="16dp"/>
+
+</FrameLayout>

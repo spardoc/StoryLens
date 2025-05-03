@@ -9,13 +9,13 @@ import android.graphics.Path;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
-
 /**
- * Vista personalizada para dibujar la viñeta a mano alzada.
+ * Vista personalizada para dibujar la viñeta y superponer un bitmap de texto.
  */
 public class DrawingView extends View {
     private Paint paint;
     private Path path;
+    private Bitmap overlayBitmap;  // Bitmap de la viñeta de texto
 
     public DrawingView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -36,6 +36,13 @@ public class DrawingView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
+        // Dibuja la viñeta de texto si existe
+        if (overlayBitmap != null) {
+            // Ajusta el tamaño del bitmap al del View
+            Bitmap scaled = Bitmap.createScaledBitmap(overlayBitmap, getWidth(), getHeight(), false);
+            canvas.drawBitmap(scaled, 0, 0, null);
+        }
+        // Dibuja el trazado libre
         canvas.drawPath(path, paint);
     }
 
@@ -51,7 +58,7 @@ public class DrawingView extends View {
                 path.lineTo(x, y);
                 break;
             case MotionEvent.ACTION_UP:
-                // nothing
+                // nada adicional
                 break;
         }
         invalidate();
@@ -59,7 +66,16 @@ public class DrawingView extends View {
     }
 
     /**
-     * Exporta el dibujo actual en un Bitmap del tamaño de la vista.
+     * Establece el bitmap de la viñeta de texto que se superpondrá.
+     * @param bitmap Bitmap de la viñeta de texto.
+     */
+    public void setOverlayBitmap(Bitmap bitmap) {
+        this.overlayBitmap = bitmap;
+        invalidate();
+    }
+
+    /**
+     * Exporta el dibujo actual (viñeta + trazado) en un Bitmap.
      */
     public Bitmap exportDrawing() {
         Bitmap bmp = Bitmap.createBitmap(getWidth(), getHeight(), Bitmap.Config.ARGB_8888);
@@ -69,10 +85,11 @@ public class DrawingView extends View {
     }
 
     /**
-     * Limpia el dibujo.
+     * Limpia el dibujo (trazado) y la viñeta.
      */
     public void clear() {
         path.reset();
+        overlayBitmap = null;
         invalidate();
     }
 }

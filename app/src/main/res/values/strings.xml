@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">write_vision_ai</string>
+    <string-array name="shape_options">
+        <item>Rectángulo</item>
+        <item>Elipse</item>
+        <item>Bocadillo</item>
+        <item>Nube</item>
+    </string-array>
 </resources>
