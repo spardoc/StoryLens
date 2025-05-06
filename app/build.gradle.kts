@@ -3,6 +3,7 @@ import org.apache.tools.ant.util.JavaEnvUtils.VERSION_1_8
 
 plugins {
     alias(libs.plugins.android.application)
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -31,6 +32,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
+        isCoreLibraryDesugaringEnabled = true
     }
     externalNativeBuild {
         cmake {
@@ -49,10 +51,16 @@ android {
 
 dependencies {
 
+
+    implementation(platform("com.google.firebase:firebase-bom:33.13.0"))
+    implementation(libs.firebase.firestore)
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.3")
+    implementation("com.google.firebase:firebase-auth")
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.constraintlayout)
     implementation(libs.activity)
+    implementation(libs.play.services.tasks)
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
@@ -67,4 +75,7 @@ dependencies {
     implementation(libs.camerax.camera2)
     implementation(libs.camerax.lifecycle)
     implementation(libs.camerax.view)
+    implementation("com.google.guava:guava:31.1-jre")
+
 }
+

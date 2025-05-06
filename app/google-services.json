@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "623209773680",
+    "project_id": "writevision-ai-bd",
+    "storage_bucket": "writevision-ai-bd.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:623209773680:android:72abf028609315dc1552b5",
+        "android_client_info": {
+          "package_name": "com.example.write_vision_ai"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCoAC9HVuaQfz_oxmT6974-Uh5RH_b6kUM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
