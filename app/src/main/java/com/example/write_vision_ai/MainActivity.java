@@ -6,6 +6,7 @@ import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
@@ -16,9 +17,14 @@ import android.widget.Toast;
 
 import android.Manifest;
 import com.example.write_vision_ai.databinding.ActivityMainBinding;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FieldValue;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,10 +38,8 @@ import retrofit2.Callback;
 import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
-import com.google.firebase.auth.FirebaseAuth;
 
-
-public class MainActivity extends AppCompatActivity implements ImageAdapter.OnAddTextClickListener{
+public class MainActivity extends AppCompatActivity implements ImageAdapter.OnAddTextClickListener {
 
     private Button btnGenerate;
     private EditText etPrompt;
@@ -43,15 +47,17 @@ public class MainActivity extends AppCompatActivity implements ImageAdapter.OnAd
     private ImageAdapter imageAdapter;
     private ApiService apiService;
     private ActivityMainBinding binding;
+    private FirebaseFirestore db;
+    private FirebaseAuth mAuth;
 
     private final List<String> imageUrls = new ArrayList<>();
 
     private static final int REQ_CAPTURE_TEXT = 2001;
-    private String pendingImageUrl; // guardamos cuál imag
+    private String pendingImageUrl;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-
+        // Verificar permisos de cámara
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
                 != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, 100);
@@ -62,15 +68,20 @@ public class MainActivity extends AppCompatActivity implements ImageAdapter.OnAd
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
+        // Inicializar Firebase
+        mAuth = FirebaseAuth.getInstance();
+        db = FirebaseFirestore.getInstance();
+
+        // Configurar botón de logout
         Button btnLogout = findViewById(R.id.btnLogout);
         btnLogout.setOnClickListener(view -> {
             FirebaseAuth.getInstance().signOut();
             Toast.makeText(MainActivity.this, "Sesión cerrada", Toast.LENGTH_SHORT).show();
             startActivity(new Intent(MainActivity.this, LoginActivity.class));
-            finish(); // finaliza la actividad actual
+            finish();
         });
 
-
+        // Inicializar UI
         btnGenerate = findViewById(R.id.btnGenerate);
         etPrompt = findViewById(R.id.etPrompt);
         recyclerView = findViewById(R.id.recyclerView);
@@ -79,6 +90,7 @@ public class MainActivity extends AppCompatActivity implements ImageAdapter.OnAd
         imageAdapter = new ImageAdapter(imageUrls, this);
         recyclerView.setAdapter(imageAdapter);
 
+        // Configurar cliente HTTP
         OkHttpClient client = new OkHttpClient.Builder()
                 .connectTimeout(30, TimeUnit.SECONDS)
                 .writeTimeout(30, TimeUnit.SECONDS)
@@ -93,6 +105,7 @@ public class MainActivity extends AppCompatActivity implements ImageAdapter.OnAd
                 })
                 .build();
 
+        // Configurar Retrofit
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl("https://api.openai.com/")
                 .addConverterFactory(GsonConverterFactory.create())
@@ -106,7 +119,6 @@ public class MainActivity extends AppCompatActivity implements ImageAdapter.OnAd
 
     @Override
     public void onAddTextClicked(String imageUrl) {
-        // guardo la URL y lanzo CameraActivity para capturar el texto
         pendingImageUrl = imageUrl;
         Intent intent = new Intent(this, CameraActivity.class);
         intent.putExtra("base_image_url", imageUrl);
@@ -151,6 +163,9 @@ public class MainActivity extends AppCompatActivity implements ImageAdapter.OnAd
 
                     imageUrls.add(imageUrl);
                     imageAdapter.notifyItemInserted(imageUrls.size() - 1);
+
+                    // Guardar la imagen en Firestore
+                    saveImageToFirestore(imageUrl, prompt);
                 } else {
                     Log.e("API_RESPONSE", "Error en la respuesta: " + response.errorBody());
                     Toast.makeText(MainActivity.this, "Error en la respuesta", Toast.LENGTH_SHORT).show();
@@ -165,16 +180,75 @@ public class MainActivity extends AppCompatActivity implements ImageAdapter.OnAd
         });
     }
 
+    private void saveImageToFirestore(String imageUrl, String prompt) {
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        if (currentUser == null) {
+            Toast.makeText(this, "Usuario no autenticado", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Mostrar progreso
+        ProgressDialog progress = new ProgressDialog(this);
+        progress.setMessage("Guardando imagen...");
+        progress.setCancelable(false);
+        progress.show();
+
+        // Crear datos de la imagen
+        Map<String, Object> imageData = new HashMap<>();
+        imageData.put("url", imageUrl);
+        imageData.put("prompt", prompt);
+        imageData.put("userId", currentUser.getUid());
+        imageData.put("userEmail", currentUser.getEmail());
+        imageData.put("createdAt", new Date());
+        imageData.put("isPublic", false);
+        imageData.put("views", 0);
+        imageData.put("likes", 0);
+        imageData.put("tags", extractTagsFromPrompt(prompt));
+
+        // Guardar en Firestore
+        db.collection("generated_images")
+                .add(imageData)
+                .addOnCompleteListener(task -> {
+                    progress.dismiss();
+                    if (task.isSuccessful()) {
+                        Log.d("FIRESTORE", "Imagen guardada con ID: " + task.getResult().getId());
+                        Toast.makeText(MainActivity.this, "Imagen guardada", Toast.LENGTH_SHORT).show();
+
+                        // Actualizar contador de imágenes del usuario
+                        updateUserImageCount(currentUser.getUid());
+                    } else {
+                        Log.e("FIRESTORE", "Error al guardar", task.getException());
+                        Toast.makeText(MainActivity.this, "Error al guardar: " +
+                                task.getException().getMessage(), Toast.LENGTH_LONG).show();
+                    }
+                });
+    }
+
+    private List<String> extractTagsFromPrompt(String prompt) {
+        List<String> tags = new ArrayList<>();
+        // Implementación básica para extraer tags (puedes mejorarla)
+        String[] words = prompt.split(" ");
+        for (String word : words) {
+            if (word.startsWith("#") && word.length() > 1) {
+                tags.add(word.substring(1));
+            }
+        }
+        return tags;
+    }
+
+    private void updateUserImageCount(String userId) {
+        db.collection("users").document(userId)
+                .update("generatedImagesCount", FieldValue.increment(1))
+                .addOnFailureListener(e ->
+                        Log.e("FIRESTORE", "Error al actualizar contador", e));
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == REQ_CAPTURE_TEXT && resultCode == RESULT_OK) {
-            // la CameraActivity devuelve la ruta de la imagen de texto recortada
             String textImagePath = data.getStringExtra("processed_text_path");
             if (textImagePath != null && pendingImageUrl != null) {
-                // ahora lanzo SelectFrameActivity pasándole:
-                // 1) la URL de la imagen generada
-                // 2) la ruta local de la imagen de texto
                 Intent drawIntent = new Intent(this, SelectFrameActivity.class);
                 drawIntent.putExtra("base_image_url", pendingImageUrl);
                 drawIntent.putExtra("text_image_path", textImagePath);
@@ -183,5 +257,3 @@ public class MainActivity extends AppCompatActivity implements ImageAdapter.OnAd
         }
     }
 }
-
-
