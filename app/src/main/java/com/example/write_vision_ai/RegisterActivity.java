@@ -1,5 +1,6 @@
 package com.example.write_vision_ai;
 
+import android.app.ProgressDialog;
 import android.os.Bundle;
 
 import androidx.activity.EdgeToEdge;
@@ -36,12 +37,18 @@ public class RegisterActivity extends AppCompatActivity {
     FirebaseFirestore mFirestore;
     FirebaseAuth mAuth;
 
+    ProgressDialog progressDialog;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
         this.setTitle("Registro");
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+
+        progressDialog = new ProgressDialog(this);
+        progressDialog.setMessage("Registrando usuario...");
+        progressDialog.setCancelable(false);
 
         mFirestore = FirebaseFirestore.getInstance();
         mAuth = FirebaseAuth.getInstance();
@@ -58,9 +65,11 @@ public class RegisterActivity extends AppCompatActivity {
                 String emailUser = email.getText().toString().trim();
                 String passUser = password.getText().toString().trim();
 
-                if (nameUser.isEmpty() && emailUser.isEmpty() && passUser.isEmpty()){
-                    Toast.makeText(RegisterActivity.this, "Complete los datos", Toast.LENGTH_SHORT).show();
-                }else{
+                if (nameUser.isEmpty() || emailUser.isEmpty() || passUser.isEmpty()) {
+                    Toast.makeText(RegisterActivity.this, "Complete todos los campos", Toast.LENGTH_SHORT).show();
+                } else if (passUser.length() < 6) {
+                    Toast.makeText(RegisterActivity.this, "La contraseña debe tener al menos 6 caracteres", Toast.LENGTH_SHORT).show();
+                } else {
                     registerUser(nameUser, emailUser, passUser);
                 }
             }
@@ -68,36 +77,43 @@ public class RegisterActivity extends AppCompatActivity {
     }
 
     private void registerUser(String nameUser, String emailUser, String passUser) {
-        mAuth.createUserWithEmailAndPassword(emailUser, passUser).addOnCompleteListener(new OnCompleteListener<AuthResult>() {
-            @Override
-            public void onComplete(@NonNull Task<AuthResult> task) {
-                String id = mAuth.getCurrentUser().getUid();
-                Map<String, Object> map = new HashMap<>();
-                map.put("id", id);
-                map.put("name", nameUser);
-                map.put("email", emailUser);
-                map.put("password", passUser);
+        progressDialog.show();
 
-                mFirestore.collection("user").document(id).set(map).addOnSuccessListener(new OnSuccessListener<Void>() {
+        mAuth.createUserWithEmailAndPassword(emailUser, passUser)
+                .addOnCompleteListener(new OnCompleteListener<AuthResult>() {
                     @Override
-                    public void onSuccess(Void unused) {
-                        finish();
-                        startActivity(new Intent(RegisterActivity.this, MainActivity.class));
-                        Toast.makeText(RegisterActivity.this, "Usuario registrado con éxito", Toast.LENGTH_SHORT).show();
-                    }
-                }).addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Toast.makeText(RegisterActivity.this, "Error al guardar", Toast.LENGTH_SHORT).show();
+                    public void onComplete(@NonNull Task<AuthResult> task) {
+                        if (task.isSuccessful()) {
+                            String id = mAuth.getCurrentUser().getUid();
+                            Map<String, Object> map = new HashMap<>();
+                            map.put("id", id);
+                            map.put("name", nameUser);
+                            map.put("email", emailUser);
+                            // No se recomienda almacenar la contraseña en Firestore
+                            // map.put("password", passUser);
+
+                            mFirestore.collection("user").document(id).set(map)
+                                    .addOnSuccessListener(new OnSuccessListener<Void>() {
+                                        @Override
+                                        public void onSuccess(Void unused) {
+                                            progressDialog.dismiss(); // Ocultar el loader
+                                            Toast.makeText(RegisterActivity.this, "Usuario registrado con éxito", Toast.LENGTH_SHORT).show();
+                                            startActivity(new Intent(RegisterActivity.this, MainActivity.class));
+                                            finish();
+                                        }
+                                    }).addOnFailureListener(new OnFailureListener() {
+                                        @Override
+                                        public void onFailure(@NonNull Exception e) {
+                                            progressDialog.dismiss();
+                                            Toast.makeText(RegisterActivity.this, "Error al guardar datos", Toast.LENGTH_SHORT).show();
+                                        }
+                                    });
+                        } else {
+                            progressDialog.dismiss();
+                            Toast.makeText(RegisterActivity.this, "Error al registrar: " + task.getException().getMessage(), Toast.LENGTH_LONG).show();
+                        }
                     }
                 });
-            }
-        }).addOnFailureListener(new OnFailureListener() {
-            @Override
-            public void onFailure(@NonNull Exception e) {
-                Toast.makeText(RegisterActivity.this, "Error al registrar", Toast.LENGTH_SHORT).show();
-            }
-        });
     }
 
     @Override

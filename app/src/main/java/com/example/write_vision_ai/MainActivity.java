@@ -32,6 +32,8 @@ import retrofit2.Callback;
 import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
+import com.google.firebase.auth.FirebaseAuth;
+
 
 public class MainActivity extends AppCompatActivity implements ImageAdapter.OnAddTextClickListener{
 
@@ -59,6 +61,15 @@ public class MainActivity extends AppCompatActivity implements ImageAdapter.OnAd
 
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+
+        Button btnLogout = findViewById(R.id.btnLogout);
+        btnLogout.setOnClickListener(view -> {
+            FirebaseAuth.getInstance().signOut();
+            Toast.makeText(MainActivity.this, "Sesión cerrada", Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(MainActivity.this, LoginActivity.class));
+            finish(); // finaliza la actividad actual
+        });
+
 
         btnGenerate = findViewById(R.id.btnGenerate);
         etPrompt = findViewById(R.id.etPrompt);

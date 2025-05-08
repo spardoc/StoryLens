@@ -26,7 +26,7 @@ import com.google.firebase.auth.FirebaseUser;
 
 public class LoginActivity extends AppCompatActivity {
 
-    Button btn_login, btn_register, btn_login_anonymous;
+    Button btn_login, btn_register;
     EditText email, password;
     FirebaseAuth mAuth;
 
@@ -42,7 +42,6 @@ public class LoginActivity extends AppCompatActivity {
         password = findViewById(R.id.contrasena);
         btn_login = findViewById(R.id.btn_ingresar);
         btn_register = findViewById(R.id.btn_register);
-        btn_login_anonymous = findViewById(R.id.btn_anonymous);
 
         btn_login.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -64,31 +63,6 @@ public class LoginActivity extends AppCompatActivity {
                 startActivity(new Intent(LoginActivity.this, RegisterActivity.class));
             }
         });
-
-        btn_login_anonymous.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                loginAnonymous();
-            }
-        });
-    }
-
-    private void loginAnonymous() {
-        mAuth.signInAnonymously()
-                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
-                    @Override
-                    public void onComplete(@NonNull Task<AuthResult> task) {
-                        if(task.isSuccessful()){
-                            FirebaseUser user = mAuth.getCurrentUser();
-                            startActivity(new Intent(LoginActivity.this, MainActivity.class));
-                        }
-                    }
-                }).addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Toast.makeText(LoginActivity.this, "Error al acceder", Toast.LENGTH_SHORT).show();
-                    }
-                });
     }
 
     private void loginUser(String emailUser, String passUser) {
@@ -120,5 +94,4 @@ public class LoginActivity extends AppCompatActivity {
             finish();
         }
     }
-
 }
