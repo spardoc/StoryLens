@@ -22,13 +22,13 @@
         android:theme="@style/Theme.Write_vision_ai"
         tools:targetApi="31">
         <activity
-            android:name=".RegisterActivity"
+            android:name=".register.RegisterActivity"
             android:exported="true" />
         <activity
-            android:name=".MainActivity"
+            android:name=".main.MainActivity"
             android:exported="true" />
         <activity
-            android:name=".LoginActivity"
+            android:name=".login.LoginActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -36,9 +36,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".CameraActivity" />
-        <activity android:name=".SelectFrameActivity" />
-        <activity android:name=".ComposeActivity" />
+        <activity android:name=".main.CameraActivity" />
+        <activity android:name=".drawing.SelectFrameActivity" />
+        <activity android:name=".main.ComposeActivity" />
     </application>
 
 </manifest>

@@ -1,12 +1,8 @@
-package com.example.write_vision_ai;
+package com.example.write_vision_ai.login;
 
 import android.os.Bundle;
 
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
 import androidx.annotation.NonNull;
 
@@ -16,6 +12,9 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import com.example.write_vision_ai.main.MainActivity;
+import com.example.write_vision_ai.R;
+import com.example.write_vision_ai.register.RegisterActivity;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.Task;

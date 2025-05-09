@@ -6,9 +6,6 @@
 using namespace cv;
 static const char* TAG = "NativeProcessor";
 
-// ——————————————
-//  Parámetros más suaves
-// ——————————————
 constexpr int   DENOISE_FILTER_SIZE       = 7;     // pequeño kernel
 constexpr int   DENOISE_FILTER_SIGMA_COLOR= 50;    // menos color smoothing
 constexpr int   DENOISE_FILTER_SIGMA_SPACE= 50;    // menos edge smoothing
@@ -70,78 +67,6 @@ void processImageInternal(const Mat& input, Mat& output) {
 
     // 7) A salida en RGBA
     cvtColor(blended, output, COLOR_GRAY2RGBA);
-}
-// Superposición de marco sobre imagen
-void overlayFrame(const Mat& base, const Mat& frame, Mat& output) {
-    Mat resizedFrame;
-    resize(frame, resizedFrame, base.size());
-
-    std::vector<Mat> channels;
-    split(resizedFrame, channels);
-    Mat alpha = channels[3];
-
-    // Convertir alpha a rango 0–1
-    Mat alphaFloat;
-    alpha.convertTo(alphaFloat, CV_32FC1, 1.0 / 255);
-
-    // Convert base y frame a float
-    Mat baseFloat, frameFloat;
-    base.convertTo(baseFloat, CV_32FC3, 1.0 / 255);
-    Mat rgbFrame;
-    cvtColor(resizedFrame, rgbFrame, COLOR_BGRA2BGR);
-    rgbFrame.convertTo(frameFloat, CV_32FC3, 1.0 / 255);
-
-    Mat resultFloat;
-    multiply(alphaFloat, frameFloat, resultFloat);
-    multiply(1.0 - alphaFloat, baseFloat, baseFloat);
-    add(resultFloat, baseFloat, resultFloat);
-
-    resultFloat.convertTo(output, CV_8UC3, 255);
-}
-
-extern "C"
-JNIEXPORT jobject JNICALL
-Java_com_example_write_1vision_1ai_CameraActivity_processImage(JNIEnv* env,
-                                                               jobject thiz,
-                                                               jobject inputBitmap) {
-    AndroidBitmapInfo info;
-    void *pixels = nullptr;
-    if (AndroidBitmap_getInfo(env, inputBitmap, &info) != ANDROID_BITMAP_RESULT_SUCCESS) {
-        __android_log_print(ANDROID_LOG_ERROR, TAG, "Failed to get Bitmap info");
-        return nullptr;
-    }
-    if (AndroidBitmap_lockPixels(env, inputBitmap, &pixels) != ANDROID_BITMAP_RESULT_SUCCESS) {
-        __android_log_print(ANDROID_LOG_ERROR, TAG, "Failed to lock Bitmap pixels");
-        return nullptr;
-    }
-
-    Mat src(info.height, info.width, CV_8UC4, pixels);
-    Mat dst;
-    processImageInternal(src, dst);
-
-    jclass bitmapClass = env->FindClass("android/graphics/Bitmap");
-    jmethodID createBitmap = env->GetStaticMethodID(bitmapClass,
-                                                    "createBitmap",
-                                                    "(IILandroid/graphics/Bitmap$Config;)Landroid/graphics/Bitmap;");
-    jclass configClass = env->FindClass("android/graphics/Bitmap$Config");
-    jfieldID fid = env->GetStaticFieldID(configClass, "ARGB_8888",
-                                         "Landroid/graphics/Bitmap$Config;");
-    jobject argb8888 = env->GetStaticObjectField(configClass, fid);
-    jobject outputBitmap = env->CallStaticObjectMethod(bitmapClass,
-                                                       createBitmap,
-                                                       static_cast<jint>(info.width),
-                                                       static_cast<jint>(info.height),
-                                                       argb8888);
-
-    void *outPixels;
-    AndroidBitmap_lockPixels(env, outputBitmap, &outPixels);
-    memcpy(outPixels, dst.data, dst.total() * dst.elemSize());
-    AndroidBitmap_unlockPixels(env, outputBitmap);
-    AndroidBitmap_unlockPixels(env, inputBitmap);
-    return outputBitmap;
-
-    // Convierte Bitmap a Mat (Android bitmap to OpenCV Mat)
-    Mat bitmapToMat(JNIEnv *env, jobject bitmap);
 }
 
 void makeRoundedRectMask(Mat& mask, int w, int h) {
@@ -285,37 +210,77 @@ void makeCloudMask(Mat& mask, int w, int h) {
     morphologyEx(mask, mask, MORPH_CLOSE, kernel);
 }
 
-
 extern "C"
 JNIEXPORT jobject JNICALL
-Java_com_example_write_1vision_1ai_SelectFrameActivity_processDrawing(
-        JNIEnv* env,
-        jobject /* this */,
-        jobject textBitmap,
-        jobject /* drawingBitmap */,
-        jint shapeType) {
+Java_com_example_write_1vision_1ai_main_CameraActivity_processImage(JNIEnv *env, jobject thiz,
+                                                                    jobject input_bitmap) {
+    AndroidBitmapInfo info;
+    void *pixels = nullptr;
+    if (AndroidBitmap_getInfo(env, input_bitmap, &info) != ANDROID_BITMAP_RESULT_SUCCESS) {
+        __android_log_print(ANDROID_LOG_ERROR, TAG, "Failed to get Bitmap info");
+        return nullptr;
+    }
+    if (AndroidBitmap_lockPixels(env, input_bitmap, &pixels) != ANDROID_BITMAP_RESULT_SUCCESS) {
+        __android_log_print(ANDROID_LOG_ERROR, TAG, "Failed to lock Bitmap pixels");
+        return nullptr;
+    }
 
+    Mat src(info.height, info.width, CV_8UC4, pixels);
+    Mat dst;
+    processImageInternal(src, dst);
+
+    jclass bitmapClass = env->FindClass("android/graphics/Bitmap");
+    jmethodID createBitmap = env->GetStaticMethodID(bitmapClass,
+                                                    "createBitmap",
+                                                    "(IILandroid/graphics/Bitmap$Config;)Landroid/graphics/Bitmap;");
+    jclass configClass = env->FindClass("android/graphics/Bitmap$Config");
+    jfieldID fid = env->GetStaticFieldID(configClass, "ARGB_8888",
+                                         "Landroid/graphics/Bitmap$Config;");
+    jobject argb8888 = env->GetStaticObjectField(configClass, fid);
+    jobject outputBitmap = env->CallStaticObjectMethod(bitmapClass,
+                                                       createBitmap,
+                                                       static_cast<jint>(info.width),
+                                                       static_cast<jint>(info.height),
+                                                       argb8888);
+
+    void *outPixels;
+    AndroidBitmap_lockPixels(env, outputBitmap, &outPixels);
+    memcpy(outPixels, dst.data, dst.total() * dst.elemSize());
+    AndroidBitmap_unlockPixels(env, outputBitmap);
+    AndroidBitmap_unlockPixels(env, input_bitmap);
+    return outputBitmap;
+
+    // Convierte Bitmap a Mat (Android bitmap to OpenCV Mat)
+    Mat bitmapToMat(JNIEnv *env, jobject bitmap);
+}
+extern "C"
+JNIEXPORT jobject JNICALL
+Java_com_example_write_1vision_1ai_drawing_SelectFrameActivity_processDrawing(JNIEnv *env,
+                                                                              jobject thiz,
+                                                                              jobject text,
+                                                                              jobject drawing,
+                                                                              jint shape_type) {
     const char* TAG = "DrawFrameActivity";
     AndroidBitmapInfo info;
     void* pixelsText = nullptr;
 
     // 1) Lock y clonar solo el bitmap de texto
-    if ( AndroidBitmap_getInfo(env, textBitmap, &info) != ANDROID_BITMAP_RESULT_SUCCESS ||
-         AndroidBitmap_lockPixels(env, textBitmap, &pixelsText) != ANDROID_BITMAP_RESULT_SUCCESS) {
+    if ( AndroidBitmap_getInfo(env, text, &info) != ANDROID_BITMAP_RESULT_SUCCESS ||
+         AndroidBitmap_lockPixels(env, text, &pixelsText) != ANDROID_BITMAP_RESULT_SUCCESS) {
         __android_log_print(ANDROID_LOG_ERROR, TAG, "Error al lockear textBitmap");
         return nullptr;
     }
     Mat srcText(info.height, info.width, CV_8UC4, pixelsText);
     Mat textMat = srcText.clone();
-    AndroidBitmap_unlockPixels(env, textBitmap);
+    AndroidBitmap_unlockPixels(env, text);
 
     // 2) Crear máscara con forma de elipse centrada
     int w = info.width, h = info.height;
 
-// 1) Crear máscara en negro
+    // 1) Crear máscara en negro
     Mat mask = Mat::zeros(textMat.size(), CV_8UC1);
 
-    switch (shapeType) {
+    switch (shape_type) {
         case 0:  // Rectángulo redondeado
             makeRoundedRectMask(mask, w, h);
             break;

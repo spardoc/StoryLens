@@ -1,4 +1,4 @@
-package com.example.write_vision_ai;
+package com.example.write_vision_ai.main;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -13,6 +13,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.bumptech.glide.Glide;
+import com.example.write_vision_ai.R;
 
 public class ComposeActivity extends AppCompatActivity {
 

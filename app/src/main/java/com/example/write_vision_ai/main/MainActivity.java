@@ -1,4 +1,4 @@
-package com.example.write_vision_ai;
+package com.example.write_vision_ai.main;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -16,7 +16,14 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import android.Manifest;
+
+import com.example.write_vision_ai.data.ApiService;
+import com.example.write_vision_ai.data.adapters.ImageAdapter;
+import com.example.write_vision_ai.data.ImageResponse;
+import com.example.write_vision_ai.R;
+import com.example.write_vision_ai.drawing.SelectFrameActivity;
 import com.example.write_vision_ai.databinding.ActivityMainBinding;
+import com.example.write_vision_ai.login.LoginActivity;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FieldValue;

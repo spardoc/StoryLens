@@ -8,7 +8,7 @@
     android:padding="8dp"
     android:clipChildren="false"
     android:clipToPadding="false"
-    tools:context=".SelectFrameActivity">
+    tools:context=".drawing.SelectFrameActivity">
 
     <!-- Contenedor con la imagen de texto y la vista para dibujar la viñeta -->
     <FrameLayout
@@ -27,7 +27,7 @@
             android:scaleType="fitCenter" />
 
         <!-- Vista de dibujo encima para que el niño trace la viñeta -->
-        <com.example.write_vision_ai.DrawingView
+        <com.example.write_vision_ai.drawing.DrawingView
             android:id="@+id/drawingView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"

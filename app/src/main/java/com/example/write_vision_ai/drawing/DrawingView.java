@@ -1,4 +1,4 @@
-package com.example.write_vision_ai;
+package com.example.write_vision_ai.drawing;
 
 import android.content.Context;
 import android.graphics.Bitmap;

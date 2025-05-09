@@ -1,4 +1,4 @@
-package com.example.write_vision_ai;
+package com.example.write_vision_ai.drawing;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -13,6 +13,9 @@ import android.widget.Spinner;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.example.write_vision_ai.R;
+import com.example.write_vision_ai.main.ComposeActivity;
 
 import java.io.File;
 import java.io.FileOutputStream;
