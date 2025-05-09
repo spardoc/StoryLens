@@ -38,7 +38,7 @@
         </activity>
         <activity android:name=".CameraActivity" />
         <activity android:name=".SelectFrameActivity" />
-
+        <activity android:name=".ComposeActivity" />
     </application>
 
 </manifest>

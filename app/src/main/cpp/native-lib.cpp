@@ -258,18 +258,18 @@ void makeCloudMask(Mat& mask, int w, int h) {
     int r = std::min(w, h) / 5;  // radio un poco mayor
     int y0 = h / 2 - r / 3;      // ligeramente arriba del centro
 
-    // Fila superior (7 círculos)
+    // Fila superior (4 círculos)
     std::vector<Point> centersTop;
-    for (int i = 0; i < 3; ++i) {
-        float fx = 0.4f + 0.9f * (i / 6.0f);
+    for (int i = 0; i < 4; ++i) {
+        float fx = 0.3f + 0.9f * (i / 6.0f);
         int dy = (i % 2 == 0) ? -r / 6 : r / 8;
         centersTop.emplace_back(Point(int(w * fx), y0 + dy));
     }
 
     // Fila inferior más baja (5 círculos)
     std::vector<Point> centersBottom;
-    for (int i = 0; i < 4; ++i) {
-        float fx = 0.3f + 0.7f * (i / 4.0f);  // un poco más centrado
+    for (int i = 0; i < 5; ++i) {
+        float fx = 0.2f + 0.6f * (i / 4.0f);  // un poco más centrado
         centersBottom.emplace_back(Point(int(w * fx), y0 + r * 0.9f));
     }
 
