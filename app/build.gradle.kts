@@ -54,6 +54,7 @@ dependencies {
 
     implementation(platform("com.google.firebase:firebase-bom:33.13.0"))
     implementation(libs.firebase.firestore)
+    implementation(libs.firebase.storage)
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.3")
     implementation("com.google.firebase:firebase-auth")
     implementation(libs.appcompat)
