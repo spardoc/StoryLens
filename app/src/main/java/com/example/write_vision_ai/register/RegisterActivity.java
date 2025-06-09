@@ -105,15 +105,31 @@ public class RegisterActivity extends AppCompatActivity {
                                         @Override
                                         public void onSuccess(Void unused) {
                                             progressDialog.dismiss();
-                                            Toast.makeText(RegisterActivity.this, "Usuario registrado con éxito", Toast.LENGTH_SHORT).show();
-                                            startActivity(new Intent(RegisterActivity.this, MainActivity.class));
+                                            Toast.makeText(RegisterActivity.this, "Registro exitoso", Toast.LENGTH_SHORT).show();
+
+                                            // Cerrar sesión tras el registro
+                                            mAuth.signOut();
+
+                                            // Ir al LoginActivity
+                                            Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
+                                            intent.putExtra("register_success", true);
+                                            startActivity(intent);
                                             finish();
                                         }
                                     }).addOnFailureListener(new OnFailureListener() {
                                         @Override
                                         public void onFailure(@NonNull Exception e) {
                                             progressDialog.dismiss();
-                                            Toast.makeText(RegisterActivity.this, "Error al guardar datos", Toast.LENGTH_SHORT).show();
+                                            Toast.makeText(RegisterActivity.this, "El registro fue exitoso", Toast.LENGTH_SHORT).show();
+
+                                            // Cerrar sesión tras el registro
+                                            mAuth.signOut();
+
+                                            // Ir al LoginActivity
+                                            Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
+                                            intent.putExtra("register_success", true);
+                                            startActivity(intent);
+                                            finish();
                                         }
                                     });
                         } else {
@@ -123,6 +139,8 @@ public class RegisterActivity extends AppCompatActivity {
                     }
                 });
     }
+
+
 
     @Override
     public boolean onSupportNavigateUp() {
