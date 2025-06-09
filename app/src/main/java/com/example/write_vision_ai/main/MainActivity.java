@@ -9,10 +9,13 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import android.Manifest;
@@ -46,18 +49,32 @@ import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
+
+import android.widget.LinearLayout;
+import android.widget.Spinner;
+import android.widget.ArrayAdapter;
+
+
+
+import android.view.View;
+
+import android.widget.AdapterView;
+
+
 public class MainActivity extends AppCompatActivity implements ImageAdapter.OnAddTextClickListener {
 
-    private Button btnGenerate;
-    private EditText etPrompt;
+    private Button btnGenerate, btnLogout;
     private RecyclerView recyclerView;
     private ImageAdapter imageAdapter;
     private ApiService apiService;
-    private ActivityMainBinding binding;
     private FirebaseFirestore db;
     private FirebaseAuth mAuth;
 
     private final List<String> imageUrls = new ArrayList<>();
+    private final List<Spinner> spinners = new ArrayList<>();
+    private LinearLayout storyLayout;
+    private TextView tvStoryPreview;
+    private Button btnPreviewStory;
 
     private static final int REQ_CAPTURE_TEXT = 2001;
     private static final int REQ_SELECT_FRAME = 2002;
@@ -65,34 +82,31 @@ public class MainActivity extends AppCompatActivity implements ImageAdapter.OnAd
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        // Verificar permisos de cámara
+        // Permisossssss
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
                 != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, 100);
         }
 
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
 
-        binding = ActivityMainBinding.inflate(getLayoutInflater());
-        setContentView(binding.getRoot());
-
-        // Inicializar Firebase
+        // Firebase
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
 
-        // Configurar botón de logout
-        Button btnLogout = findViewById(R.id.btnLogout);
+        btnGenerate = findViewById(R.id.btnGenerate);
+        btnLogout = findViewById(R.id.btnLogout);
+        recyclerView = findViewById(R.id.recyclerView);
+        storyLayout = findViewById(R.id.storyLayout);
+
+        // Logout
         btnLogout.setOnClickListener(view -> {
-            FirebaseAuth.getInstance().signOut();
+            mAuth.signOut();
             Toast.makeText(MainActivity.this, "Sesión cerrada", Toast.LENGTH_SHORT).show();
             startActivity(new Intent(MainActivity.this, LoginActivity.class));
             finish();
         });
-
-        // Inicializar UI
-        btnGenerate = findViewById(R.id.btnGenerate);
-        etPrompt = findViewById(R.id.etPrompt);
-        recyclerView = findViewById(R.id.recyclerView);
 
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         imageAdapter = new ImageAdapter(imageUrls, this);
@@ -103,17 +117,14 @@ public class MainActivity extends AppCompatActivity implements ImageAdapter.OnAd
                 .connectTimeout(30, TimeUnit.SECONDS)
                 .writeTimeout(30, TimeUnit.SECONDS)
                 .readTimeout(30, TimeUnit.SECONDS)
-                .addInterceptor(new Interceptor() {
-                    @Override
-                    public okhttp3.Response intercept(Chain chain) throws IOException {
-                        Request request = chain.request();
-                        Log.d("API_REQUEST", "Request URL: " + request.url());
-                        return chain.proceed(request);
-                    }
+                .addInterceptor(chain -> {
+                    Request request = chain.request();
+                    Log.d("API_REQUEST", "Request URL: " + request.url());
+                    return chain.proceed(request);
                 })
                 .build();
 
-        // Configurar Retrofit
+        // Retrofit
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl("https://api.openai.com/")
                 .addConverterFactory(GsonConverterFactory.create())
@@ -122,38 +133,121 @@ public class MainActivity extends AppCompatActivity implements ImageAdapter.OnAd
 
         apiService = retrofit.create(ApiService.class);
 
+        // Opciones por viñeta
+        String[][] options = {
+                {"un niño", "una niña", "un perro", "un gato"},
+                {"una flor mágica", "una piedra brillante", "una hoja gigante"},
+                {"un camino dorado", "una huella misteriosa", "un mapa antiguo"},
+                {"un árbol parlante", "una cueva secreta", "un castillo en miniatura"},
+                {"una ardilla sabia", "un búho cantante", "un ratón inventor"},
+                {"una bicicleta voladora", "un paraguas que habla", "un robot de hojas"},
+                {"una nube gigante", "un monstruo de chocolate", "una sombra traviesa"},
+                {"una fiesta de globos", "una danza mágica", "un picnic de estrellas"}
+        };
+
+        // TextView para mostrar la historia
+        tvStoryPreview = new TextView(this);
+        tvStoryPreview.setTextSize(16);
+        tvStoryPreview.setTextColor(Color.parseColor("#333333"));
+        tvStoryPreview.setPadding(0, 24, 0, 8);
+        tvStoryPreview.setLayoutParams(new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+        ));
+        storyLayout.addView(tvStoryPreview);
+
+        // Botón para previsualizar la historia
+        btnPreviewStory = new Button(this);
+        btnPreviewStory.setText("Previsualizar historia");
+        btnPreviewStory.setLayoutParams(new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+        ));
+        btnPreviewStory.setOnClickListener(v -> previewStory());
+        storyLayout.addView(btnPreviewStory);
+
+        // Crear spinners y etiquetas
+        for (int i = 0; i < options.length; i++) {
+            // Etiqueta de la viñeta
+            TextView label = new TextView(this);
+            label.setText("Viñeta " + (i + 1));
+            label.setTextSize(18);
+            label.setTextColor(Color.parseColor("#333333"));
+            label.setPadding(0, 24, 0, 8);
+            label.setLayoutParams(new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+            ));
+            storyLayout.addView(label);
+
+            // Spinner con las opciones
+            Spinner spinner = new Spinner(this);
+            ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, options[i]);
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            spinner.setAdapter(adapter);
+            spinner.setLayoutParams(new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+            ));
+
+            // Listener para actualizar la historia automáticamente
+            spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                @Override
+                public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                    previewStory();
+                }
+
+                @Override
+                public void onNothingSelected(AdapterView<?> parent) {}
+            });
+
+            storyLayout.addView(spinner);
+            spinners.add(spinner);
+        }
+
         btnGenerate.setOnClickListener(view -> generateImages());
     }
 
-    @Override
-    public void onAddTextClicked(String imageUrl) {
-        pendingImageIndex = imageUrls.indexOf(imageUrl);
-        if (pendingImageIndex == -1) return; // seguridad
-        String url = imageUrls.get(pendingImageIndex);
+    private void previewStory() {
+        StringBuilder storyBuilder = new StringBuilder();
+        String[] basePrompts = {
+                "%s salió a pasear por el parque.\n\n",
+                "Encontró %s en el suelo.\n\n",
+                "Decidió seguir %s.\n\n",
+                "Llegó a %s.\n\n",
+                "Allí conoció a %s.\n\n",
+                "Juntos inventaron %s.\n\n",
+                "Pero apareció %s.\n\n",
+                "Al final, todos celebraron con %s.\n\n"
+        };
 
-        Intent intent = new Intent(this, CameraActivity.class);
-        intent.putExtra("base_image_url", url);
-        startActivityForResult(intent, REQ_CAPTURE_TEXT);
-    }
-
-
-    private void generateImages() {
-        String userInput = etPrompt.getText().toString().trim();
-
-        if (userInput.isEmpty()) {
-            Toast.makeText(this, "Por favor, ingresa al menos un prompt", Toast.LENGTH_SHORT).show();
-            return;
+        for (int i = 0; i < spinners.size(); i++) {
+            String selection = spinners.get(i).getSelectedItem().toString();
+            storyBuilder.append(String.format(basePrompts[i], selection));
         }
 
-        String[] userPrompts = userInput.split("\n|,");
+        tvStoryPreview.setText(storyBuilder.toString());
+    }
 
+    private void generateImages() {
         imageUrls.clear();
         imageAdapter.notifyDataSetChanged();
 
-        for (String prompt : userPrompts) {
-            if (!prompt.trim().isEmpty()) {
-                generateImage(prompt.trim());
-            }
+        String[] basePrompts = {
+                "%s salió a pasear por el parque.",
+                "Encontró %s en el suelo.",
+                "Decidió seguir %s.",
+                "Llegó a %s.",
+                "Allí conoció a %s.",
+                "Juntos inventaron %s.",
+                "Pero apareció %s.",
+                "Al final, todos celebraron con %s."
+        };
+
+        for (int i = 0; i < spinners.size(); i++) {
+            String selection = spinners.get(i).getSelectedItem().toString();
+            String prompt = String.format(basePrompts[i], selection);
+            generateImage(prompt);
         }
     }
 
@@ -167,26 +261,18 @@ public class MainActivity extends AppCompatActivity implements ImageAdapter.OnAd
         apiService.generateImage(requestBody).enqueue(new Callback<ImageResponse>() {
             @Override
             public void onResponse(Call<ImageResponse> call, Response<ImageResponse> response) {
-                Log.d("API_RESPONSE", "Response Code: " + response.code());
-
                 if (response.isSuccessful() && response.body() != null) {
                     String imageUrl = response.body().getData().get(0).getUrl();
-                    Log.d("API_RESPONSE", "Image URL: " + imageUrl);
-
                     imageUrls.add(imageUrl);
                     imageAdapter.notifyItemInserted(imageUrls.size() - 1);
-
-                    // Guardar la imagen en Firestore
                     saveImageToFirestore(imageUrl, prompt);
                 } else {
-                    Log.e("API_RESPONSE", "Error en la respuesta: " + response.errorBody());
                     Toast.makeText(MainActivity.this, "Error en la respuesta", Toast.LENGTH_SHORT).show();
                 }
             }
 
             @Override
             public void onFailure(Call<ImageResponse> call, Throwable t) {
-                Log.e("API_ERROR", "Error en la conexión: " + t.getMessage());
                 Toast.makeText(MainActivity.this, "Error en la conexión", Toast.LENGTH_SHORT).show();
             }
         });
@@ -199,13 +285,11 @@ public class MainActivity extends AppCompatActivity implements ImageAdapter.OnAd
             return;
         }
 
-        // Mostrar progreso
         ProgressDialog progress = new ProgressDialog(this);
         progress.setMessage("Guardando imagen...");
         progress.setCancelable(false);
         progress.show();
 
-        // Crear datos de la imagen
         Map<String, Object> imageData = new HashMap<>();
         imageData.put("url", imageUrl);
         imageData.put("prompt", prompt);
@@ -217,19 +301,14 @@ public class MainActivity extends AppCompatActivity implements ImageAdapter.OnAd
         imageData.put("likes", 0);
         imageData.put("tags", extractTagsFromPrompt(prompt));
 
-        // Guardar en Firestore
         db.collection("generated_images")
                 .add(imageData)
                 .addOnCompleteListener(task -> {
                     progress.dismiss();
                     if (task.isSuccessful()) {
-                        Log.d("FIRESTORE", "Imagen guardada con ID: " + task.getResult().getId());
                         Toast.makeText(MainActivity.this, "Imagen guardada", Toast.LENGTH_SHORT).show();
-
-                        // Actualizar contador de imágenes del usuario
                         updateUserImageCount(currentUser.getUid());
                     } else {
-                        Log.e("FIRESTORE", "Error al guardar", task.getException());
                         Toast.makeText(MainActivity.this, "Error al guardar: " +
                                 task.getException().getMessage(), Toast.LENGTH_LONG).show();
                     }
@@ -238,7 +317,6 @@ public class MainActivity extends AppCompatActivity implements ImageAdapter.OnAd
 
     private List<String> extractTagsFromPrompt(String prompt) {
         List<String> tags = new ArrayList<>();
-        // Implementación básica para extraer tags (puedes mejorarla)
         String[] words = prompt.split(" ");
         for (String word : words) {
             if (word.startsWith("#") && word.length() > 1) {
@@ -256,31 +334,28 @@ public class MainActivity extends AppCompatActivity implements ImageAdapter.OnAd
     }
 
     @Override
+    public void onAddTextClicked(String imageUrl) {
+        pendingImageIndex = imageUrls.indexOf(imageUrl);
+        if (pendingImageIndex == -1) return;
+
+        Intent intent = new Intent(this, CameraActivity.class);
+        intent.putExtra("base_image_url", imageUrl);
+        startActivityForResult(intent, REQ_CAPTURE_TEXT);
+    }
+
+    @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-
-        Log.d("MainActivity", "onActivityResult: requestCode=" + requestCode + ", resultCode=" + resultCode);
 
         if ((requestCode == REQ_CAPTURE_TEXT || requestCode == REQ_SELECT_FRAME) && resultCode == RESULT_OK) {
             if (data != null && data.hasExtra("final_image_path")) {
                 String finalImagePath = data.getStringExtra("final_image_path");
-                Log.d("MainActivity", "final_image_path: " + finalImagePath);
-
                 if (finalImagePath != null && pendingImageIndex != -1) {
-                    // Actualiza la lista con la nueva imagen
                     imageUrls.set(pendingImageIndex, finalImagePath);
-                    // Notifica al adapter para refrescar esa posición
                     imageAdapter.notifyItemChanged(pendingImageIndex);
-
-                    // Reinicia pendingImageIndex
                     pendingImageIndex = -1;
                 }
-            } else {
-                Log.e("MainActivity", "No final_image_path in intent data or data is null");
             }
         }
     }
-
-
-
 }
