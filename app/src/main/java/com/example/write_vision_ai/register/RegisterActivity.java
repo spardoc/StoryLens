@@ -12,8 +12,10 @@ import android.content.Intent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.write_vision_ai.login.LoginActivity;
 import com.example.write_vision_ai.main.MainActivity;
 import com.example.write_vision_ai.R;
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -34,8 +36,8 @@ public class RegisterActivity extends AppCompatActivity {
     EditText name, email, password;
     FirebaseFirestore mFirestore;
     FirebaseAuth mAuth;
-
     ProgressDialog progressDialog;
+    TextView goToLogin; // 👈 Añadimos la referencia
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,6 +57,7 @@ public class RegisterActivity extends AppCompatActivity {
         email = findViewById(R.id.correo);
         password = findViewById(R.id.contrasena);
         btn_register = findViewById(R.id.btn_registro);
+        goToLogin = findViewById(R.id.goToLogin); // 👈 Conectamos el TextView del layout
 
         btn_register.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -72,6 +75,15 @@ public class RegisterActivity extends AppCompatActivity {
                 }
             }
         });
+
+        // 👇 Nueva lógica para ir al login
+        goToLogin.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivity(new Intent(RegisterActivity.this, LoginActivity.class));
+                finish();
+            }
+        });
     }
 
     private void registerUser(String nameUser, String emailUser, String passUser) {
@@ -87,14 +99,12 @@ public class RegisterActivity extends AppCompatActivity {
                             map.put("id", id);
                             map.put("name", nameUser);
                             map.put("email", emailUser);
-                            // No se recomienda almacenar la contraseña en Firestore
-                            // map.put("password", passUser);
 
                             mFirestore.collection("user").document(id).set(map)
                                     .addOnSuccessListener(new OnSuccessListener<Void>() {
                                         @Override
                                         public void onSuccess(Void unused) {
-                                            progressDialog.dismiss(); // Ocultar el loader
+                                            progressDialog.dismiss();
                                             Toast.makeText(RegisterActivity.this, "Usuario registrado con éxito", Toast.LENGTH_SHORT).show();
                                             startActivity(new Intent(RegisterActivity.this, MainActivity.class));
                                             finish();

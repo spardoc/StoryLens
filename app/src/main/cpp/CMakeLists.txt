@@ -11,9 +11,9 @@ cmake_minimum_required(VERSION 3.22.1)
 # build script scope).
 project("write_vision_ai")
 set(OpenCV_STATIC on)
-set(OpenCV_DIR /home/grizz/Open_CV_Tools/opencv-4.10.0-android-sdk/OpenCV-android-sdk/sdk/native/jni)
+set(OpenCV_DIR /home/hawsl/Descargas/opencv-4.10.0-android-sdk/OpenCV-android-sdk/sdk/native/jni)
 find_package(OpenCV REQUIRED)
-include_directories(/home/grizz/Open_CV_Tools/opencv-4.10.0-android-sdk/OpenCV-android-sdk/sdk/native/jni/include)
+include_directories(/home/hawsl/Descargas/opencv-4.10.0-android-sdk/OpenCV-android-sdk/sdk/native/jni /include)
 
 
 # Creates and names a library, sets it as either STATIC
