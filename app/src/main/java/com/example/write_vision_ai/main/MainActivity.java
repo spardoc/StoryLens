@@ -60,7 +60,8 @@ public class MainActivity extends AppCompatActivity implements ImageAdapter.OnAd
     private final List<String> imageUrls = new ArrayList<>();
 
     private static final int REQ_CAPTURE_TEXT = 2001;
-    private String pendingImageUrl;
+    private static final int REQ_SELECT_FRAME = 2002;
+    private int pendingImageIndex = -1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -126,11 +127,15 @@ public class MainActivity extends AppCompatActivity implements ImageAdapter.OnAd
 
     @Override
     public void onAddTextClicked(String imageUrl) {
-        pendingImageUrl = imageUrl;
+        pendingImageIndex = imageUrls.indexOf(imageUrl);
+        if (pendingImageIndex == -1) return; // seguridad
+        String url = imageUrls.get(pendingImageIndex);
+
         Intent intent = new Intent(this, CameraActivity.class);
-        intent.putExtra("base_image_url", imageUrl);
+        intent.putExtra("base_image_url", url);
         startActivityForResult(intent, REQ_CAPTURE_TEXT);
     }
+
 
     private void generateImages() {
         String userInput = etPrompt.getText().toString().trim();
@@ -253,14 +258,29 @@ public class MainActivity extends AppCompatActivity implements ImageAdapter.OnAd
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == REQ_CAPTURE_TEXT && resultCode == RESULT_OK) {
-            String textImagePath = data.getStringExtra("processed_text_path");
-            if (textImagePath != null && pendingImageUrl != null) {
-                Intent drawIntent = new Intent(this, SelectFrameActivity.class);
-                drawIntent.putExtra("base_image_url", pendingImageUrl);
-                drawIntent.putExtra("text_image_path", textImagePath);
-                startActivity(drawIntent);
+
+        Log.d("MainActivity", "onActivityResult: requestCode=" + requestCode + ", resultCode=" + resultCode);
+
+        if ((requestCode == REQ_CAPTURE_TEXT || requestCode == REQ_SELECT_FRAME) && resultCode == RESULT_OK) {
+            if (data != null && data.hasExtra("final_image_path")) {
+                String finalImagePath = data.getStringExtra("final_image_path");
+                Log.d("MainActivity", "final_image_path: " + finalImagePath);
+
+                if (finalImagePath != null && pendingImageIndex != -1) {
+                    // Actualiza la lista con la nueva imagen
+                    imageUrls.set(pendingImageIndex, finalImagePath);
+                    // Notifica al adapter para refrescar esa posición
+                    imageAdapter.notifyItemChanged(pendingImageIndex);
+
+                    // Reinicia pendingImageIndex
+                    pendingImageIndex = -1;
+                }
+            } else {
+                Log.e("MainActivity", "No final_image_path in intent data or data is null");
             }
         }
     }
+
+
+
 }

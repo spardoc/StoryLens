@@ -142,11 +142,12 @@ public class CameraActivity extends AppCompatActivity {
         previewView.setVisibility(View.VISIBLE);
     }
 
+    private static final int REQ_SELECT_FRAME = 102;
+
     private void confirmPhoto() {
         Bitmap original = ((BitmapDrawable) imageCaptureView.getDrawable()).getBitmap();
         Bitmap processed = processImage(original);
 
-        // guarda en cache...
         File cache = new File(getCacheDir(), "text_processed.png");
         try (FileOutputStream fos = new FileOutputStream(cache)) {
             processed.compress(Bitmap.CompressFormat.PNG, 100, fos);
@@ -156,20 +157,17 @@ public class CameraActivity extends AppCompatActivity {
             return;
         }
 
-        // Construimos el Intent a DrawFrameActivity:
         Intent intent = new Intent(this, SelectFrameActivity.class);
         intent.putExtra("text_image_path", cache.getAbsolutePath());
 
-        // Propagamos la URL base que recibimos de MainActivity:
+        // Propaga base_image_url si existe
         String baseUrl = getIntent().getStringExtra("base_image_url");
         if (baseUrl != null) {
             intent.putExtra("base_image_url", baseUrl);
         }
 
-        startActivityForResult(intent, REQUEST_FRAME);
+        startActivityForResult(intent, REQ_SELECT_FRAME);
     }
-
-
 
     @Override
     public void onRequestPermissionsResult(int requestCode,
@@ -189,15 +187,18 @@ public class CameraActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == REQUEST_FRAME && resultCode == RESULT_OK) {
-            String framedPath = data.getStringExtra("framed_image_path");
-            if (framedPath != null) {
-                Bitmap framed = BitmapFactory.decodeFile(framedPath);
-                // Aquí ya tienes la imagen del texto con su viñeta
-                imageCaptureView.setImageBitmap(framed);
-                // Y si quieres, puedes continuar el flujo de insertar en el cómic
+
+        if (requestCode == REQ_SELECT_FRAME && resultCode == RESULT_OK && data != null) {
+            String finalImagePath = data.getStringExtra("final_image_path");
+            if (finalImagePath != null) {
+                Intent result = new Intent();
+                result.putExtra("final_image_path", finalImagePath);
+                setResult(RESULT_OK, result);
+                finish();
+            } else {
+                setResult(RESULT_CANCELED);
+                finish();
             }
         }
     }
-
 }

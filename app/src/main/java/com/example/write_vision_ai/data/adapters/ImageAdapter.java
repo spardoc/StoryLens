@@ -1,5 +1,6 @@
 package com.example.write_vision_ai.data.adapters;
 
+import android.net.Uri;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -39,7 +40,7 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ViewHolder> 
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         String url = imageUrls.get(position);
         Glide.with(holder.imageView.getContext())
-                .load(url)
+                .load(url.startsWith("file:") ? Uri.parse(url) : url)
                 .into(holder.imageView);
 
         holder.btnAddText.setOnClickListener(v -> {

@@ -12,6 +12,7 @@ import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.Toast;
 
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.write_vision_ai.R;
@@ -31,6 +32,9 @@ public class SelectFrameActivity extends AppCompatActivity {
     private Spinner spinnerShape;
     private Button btnConfirm;
     private Bitmap textBitmap;
+
+    private static final int COMPOSE_REQUEST_CODE = 1234;
+
 
     // Variables para drag
     private float dX, dY;
@@ -86,8 +90,7 @@ public class SelectFrameActivity extends AppCompatActivity {
             String baseUrl = getIntent().getStringExtra("base_image_url");
             compose.putExtra("base_image_url", baseUrl);
             compose.putExtra("processed_image_path", outFile.getAbsolutePath());
-            startActivity(compose);
-            finish();
+            startActivityForResult(compose, COMPOSE_REQUEST_CODE);
         });
     }
 
@@ -127,6 +130,24 @@ public class SelectFrameActivity extends AppCompatActivity {
 
         Toast.makeText(this, "Contorno aplicado: ajústalo si lo deseas", Toast.LENGTH_SHORT).show();
     }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == COMPOSE_REQUEST_CODE && resultCode == RESULT_OK && data != null) {
+            String finalImagePath = data.getStringExtra("final_image_path");
+            if (finalImagePath != null) {
+                Intent result = new Intent();
+                result.putExtra("final_image_path", finalImagePath);
+                setResult(RESULT_OK, result);
+                finish();
+            } else {
+                setResult(RESULT_CANCELED);
+                finish();
+            }
+        }
+    }
+
 
     public native Bitmap processDrawing(Bitmap text, Bitmap drawing, int shapeType);
 }
