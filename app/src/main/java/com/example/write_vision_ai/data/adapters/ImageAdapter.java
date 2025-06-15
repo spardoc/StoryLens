@@ -1,5 +1,6 @@
 package com.example.write_vision_ai.data.adapters;
 
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -60,4 +61,9 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ViewHolder> 
             btnAddText = view.findViewById(R.id.btnAddText);
         }
     }
+
+    public List<String> getCompositedImages() {
+        return imageUrls;
+    }
+
 }

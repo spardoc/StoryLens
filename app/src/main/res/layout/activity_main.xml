@@ -88,4 +88,13 @@
         android:layout_weight="1"
         android:padding="8dp" />
 
+    <!-- Botón exportar imágenes -->
+    <Button
+        android:id="@+id/btnExportPdf"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Exportar imágenes"
+        android:layout_marginBottom="8dp"
+        android:layout_gravity="center_horizontal" />
+
 </LinearLayout>

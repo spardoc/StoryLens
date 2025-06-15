@@ -3,18 +3,22 @@ package com.example.write_vision_ai.main;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.app.ProgressDialog;
+import android.content.ActivityNotFoundException;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -24,15 +28,19 @@ import com.example.write_vision_ai.data.ApiService;
 import com.example.write_vision_ai.data.adapters.ImageAdapter;
 import com.example.write_vision_ai.data.ImageResponse;
 import com.example.write_vision_ai.R;
-import com.example.write_vision_ai.drawing.SelectFrameActivity;
-import com.example.write_vision_ai.databinding.ActivityMainBinding;
 import com.example.write_vision_ai.login.LoginActivity;
+import com.example.write_vision_ai.utils.PdfGenerator;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -40,7 +48,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import retrofit2.Call;
@@ -53,13 +60,9 @@ import retrofit2.converter.gson.GsonConverterFactory;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.ArrayAdapter;
-
-
-
 import android.view.View;
-
 import android.widget.AdapterView;
-
+import android.graphics.Bitmap;
 
 public class MainActivity extends AppCompatActivity implements ImageAdapter.OnAddTextClickListener {
 
@@ -75,14 +78,13 @@ public class MainActivity extends AppCompatActivity implements ImageAdapter.OnAd
     private LinearLayout storyLayout;
     private TextView tvStoryPreview;
     private Button btnPreviewStory;
-
+    private Button btnExportPdf;
     private static final int REQ_CAPTURE_TEXT = 2001;
     private static final int REQ_SELECT_FRAME = 2002;
     private int pendingImageIndex = -1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        // Permisossssss
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
                 != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, 100);
@@ -99,6 +101,7 @@ public class MainActivity extends AppCompatActivity implements ImageAdapter.OnAd
         btnLogout = findViewById(R.id.btnLogout);
         recyclerView = findViewById(R.id.recyclerView);
         storyLayout = findViewById(R.id.storyLayout);
+        btnExportPdf = findViewById(R.id.btnExportPdf);
 
         // Logout
         btnLogout.setOnClickListener(view -> {
@@ -107,6 +110,69 @@ public class MainActivity extends AppCompatActivity implements ImageAdapter.OnAd
             startActivity(new Intent(MainActivity.this, LoginActivity.class));
             finish();
         });
+
+        btnExportPdf.setOnClickListener(v -> {
+            new Thread(() -> {
+                List<String> imagePaths = imageAdapter.getCompositedImages();
+                List<Bitmap> bitmaps = new ArrayList<>();
+
+                for (String path : imagePaths) {
+                    Log.d("ExportPDF", "Procesando ruta: " + path);
+                    Bitmap bitmap = null;
+                    if (path.startsWith("http://") || path.startsWith("https://")) {
+                        bitmap = loadBitmapFromUrl(path); // Método que tienes para HTTP URLs
+                    } else if (path.startsWith("content://")) {
+                        bitmap = loadBitmapFromUri(MainActivity.this, path); // Nuevo método para URIs Android
+                    } else {
+                        // Podrías agregar manejo para rutas de archivo locales si aplica
+                    }
+
+                    if (bitmap != null) {
+                        bitmaps.add(bitmap);
+                    } else {
+                        Log.w("ExportPDF", "No se pudo cargar el bitmap para: " + path);
+                    }
+                }
+
+
+                Log.d("ExportPDF", "Cantidad de rutas de imagen: " + imagePaths.size());
+                if (!bitmaps.isEmpty()) {
+                    try {
+                        // Exporta el PDF
+                        PdfGenerator.export(MainActivity.this, bitmaps, "comic_historia.pdf");
+
+                        runOnUiThread(() -> {
+                            Toast.makeText(MainActivity.this, "PDF generado correctamente", Toast.LENGTH_SHORT).show();
+
+                            // Intenta abrir el PDF después de generarlo
+                            File pdfFile = new File(getExternalFilesDir(null), "comic_historia.pdf");
+                            Uri pdfUri = FileProvider.getUriForFile(
+                                    MainActivity.this,
+                                    getPackageName() + ".provider",
+                                    pdfFile
+                            );
+
+                            Intent intent = new Intent(Intent.ACTION_VIEW);
+                            intent.setDataAndType(pdfUri, "application/pdf");
+                            intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+                            try {
+                                startActivity(intent);
+                            } catch (ActivityNotFoundException e) {
+                                Toast.makeText(MainActivity.this, "No hay aplicación para abrir PDF", Toast.LENGTH_LONG).show();
+                            }
+                        });
+
+                    } catch (IOException e) {
+                        runOnUiThread(() -> Toast.makeText(MainActivity.this, "Error al generar PDF", Toast.LENGTH_SHORT).show());
+                        e.printStackTrace();
+                    }
+                } else {
+                    runOnUiThread(() -> Toast.makeText(MainActivity.this, "No se pudieron cargar imágenes", Toast.LENGTH_SHORT).show());
+                }
+            }).start();
+        });
+
 
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         imageAdapter = new ImageAdapter(imageUrls, this);
@@ -252,21 +318,36 @@ public class MainActivity extends AppCompatActivity implements ImageAdapter.OnAd
     }
 
     private void generateImage(String prompt) {
+
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("model", "dall-e-3");
         requestBody.put("prompt", prompt);
         requestBody.put("n", 1);
         requestBody.put("size", "1024x1024");
+        requestBody.put("response_format", "url");
 
         apiService.generateImage(requestBody).enqueue(new Callback<ImageResponse>() {
             @Override
             public void onResponse(Call<ImageResponse> call, Response<ImageResponse> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     String imageUrl = response.body().getData().get(0).getUrl();
+                    Log.d("IMAGE_ADDED", "URL: " + imageUrl);
                     imageUrls.add(imageUrl);
-                    imageAdapter.notifyItemInserted(imageUrls.size() - 1);
+                    runOnUiThread(() -> imageAdapter.notifyDataSetChanged()); // Forza la actualización completa
                     saveImageToFirestore(imageUrl, prompt);
                 } else {
+                    Log.e("IMAGE_ERROR", "Código: " + response.code());
+                    Log.e("IMAGE_ERROR", "Mensaje: " + response.message());
+
+                    try {
+                        if (response.errorBody() != null) {
+                            String errorBody = response.errorBody().string();
+                            Log.e("IMAGE_ERROR", "Cuerpo de error: " + errorBody);
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
                     Toast.makeText(MainActivity.this, "Error en la respuesta", Toast.LENGTH_SHORT).show();
                 }
             }
@@ -277,6 +358,37 @@ public class MainActivity extends AppCompatActivity implements ImageAdapter.OnAd
             }
         });
     }
+
+    public static Bitmap loadBitmapFromUrl(String src) {
+        try {
+            URL url = new URL(src);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setDoInput(true);
+            connection.connect();
+            InputStream input = connection.getInputStream();
+            return BitmapFactory.decodeStream(input);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public Bitmap loadBitmapFromUri(Context context, String uriString) {
+        try {
+            Uri uri = Uri.parse(uriString);
+            InputStream inputStream = context.getContentResolver().openInputStream(uri);
+            Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
+            if (inputStream != null) {
+                inputStream.close();
+            }
+            return bitmap;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+
 
     private void saveImageToFirestore(String imageUrl, String prompt) {
         FirebaseUser currentUser = mAuth.getCurrentUser();
