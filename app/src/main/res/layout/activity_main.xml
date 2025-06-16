@@ -7,16 +7,46 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="#FAFAFA"
+    android:padding="8dp"
     tools:context=".main.MainActivity">
 
-    <!-- Botón de cerrar sesión -->
-    <Button
-        android:id="@+id/btnLogout"
-        android:layout_width="wrap_content"
+    <!-- Header con título y botón de logout -->
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Cerrar sesión"
-        android:layout_margin="8dp"
-        android:layout_gravity="end" />
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingBottom="16dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Crea tu Historia"
+            android:textSize="20sp"
+            android:textColor="#333333"
+            android:textStyle="bold"/>
+
+        <Button
+            android:id="@+id/btnLogout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Cerrar sesión"
+            android:backgroundTint="#6200EE"
+            android:textColor="#FFFFFF"
+            android:paddingHorizontal="16dp"/>
+    </LinearLayout>
+
+    <!-- Previsualización de la historia -->
+    <TextView
+        android:id="@+id/tvStoryPreview"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="16sp"
+        android:textColor="#333333"
+        android:padding="16dp"
+        android:background="#F5F5F5"
+        android:layout_marginBottom="8dp"/>
 
     <!-- ScrollView con el contenido de la historia -->
     <ScrollView
@@ -24,49 +54,17 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:fillViewport="true">
+        android:fillViewport="true"
+        android:background="#FFFFFF"
+        android:padding="8dp">
 
         <LinearLayout
             android:id="@+id/storyLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp"
-            android:background="#ffffff" >
+            android:orientation="vertical">
 
-            <!-- Ejemplo de opciones fijas con viñetas al lado oooo-->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:padding="8dp">
-
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Opción 1"
-                    android:textSize="16sp"
-                    android:paddingStart="8dp" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:padding="8dp">
-
-
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Opción 2"
-                    android:textSize="16sp"
-                    android:paddingStart="8dp" />
-            </LinearLayout>
+            <!-- Las opciones se generan dinámicamente desde el código -->
 
         </LinearLayout>
     </ScrollView>
@@ -74,11 +72,14 @@
     <!-- Botón generar imágenes -->
     <Button
         android:id="@+id/btnGenerate"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
         android:text="Generar imágenes"
-        android:layout_margin="8dp"
-        android:layout_gravity="center_horizontal" />
+        android:layout_marginTop="8dp"
+        android:backgroundTint="#6200EE"
+        android:textColor="#FFFFFF"
+        android:textAllCaps="false"
+        android:textSize="16sp"/>
 
     <!-- RecyclerView para mostrar las imágenes -->
     <androidx.recyclerview.widget.RecyclerView
@@ -91,10 +92,14 @@
     <!-- Botón exportar imágenes -->
     <Button
         android:id="@+id/btnExportPdf"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
         android:text="Exportar imágenes"
+        android:layout_marginTop="8dp"
         android:layout_marginBottom="8dp"
-        android:layout_gravity="center_horizontal" />
+        android:backgroundTint="#03DAC6"
+        android:textColor="#000000"
+        android:textAllCaps="false"
+        android:textSize="16sp"/>
 
 </LinearLayout>
