@@ -1,4 +1,4 @@
-package com.example.write_vision_ai.login;
+package com.example.write_vision_ai.auth;
 
 import android.os.Bundle;
 
@@ -15,7 +15,6 @@ import android.widget.Toast;
 
 import com.example.write_vision_ai.main.MainActivity;
 import com.example.write_vision_ai.R;
-import com.example.write_vision_ai.register.RegisterActivity;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.Task;

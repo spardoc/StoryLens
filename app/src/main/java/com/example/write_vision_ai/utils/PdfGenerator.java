@@ -2,17 +2,21 @@ package com.example.write_vision_ai.utils;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.pdf.PdfDocument;
-
+import android.net.Uri;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.util.List;
 
 public class PdfGenerator {
+
     public static void export(Context context, List<Bitmap> images, String fileName) throws IOException {
         int factor = 2;
         int pageWidth = 595 * factor;
@@ -40,7 +44,7 @@ public class PdfGenerator {
             Bitmap scaled = Bitmap.createScaledBitmap(bmp, imgW, imgH, true);
             c.drawBitmap(scaled, x, y, paint);
 
-            // 👇 Borde negro estilo cómic
+            // Borde negro estilo cómic
             c.drawRect(x, y, x + imgW, y + imgH, borderPaint);
 
             count++;
@@ -67,5 +71,26 @@ public class PdfGenerator {
             pdf.writeTo(fos);
         }
         pdf.close();
+    }
+
+    // Métodos auxiliares para cargar bitmaps desde URL o URI
+    public static Bitmap loadBitmapFromUrl(String url) {
+        try {
+            InputStream input = new URL(url).openStream();
+            return BitmapFactory.decodeStream(input);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public static Bitmap loadBitmapFromUri(Context context, String uriString) {
+        try {
+            InputStream input = context.getContentResolver().openInputStream(Uri.parse(uriString));
+            return BitmapFactory.decodeStream(input);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 }

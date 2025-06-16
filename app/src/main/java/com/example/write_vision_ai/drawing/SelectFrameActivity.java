@@ -35,7 +35,6 @@ public class SelectFrameActivity extends AppCompatActivity {
 
     private static final int COMPOSE_REQUEST_CODE = 1234;
 
-
     // Variables para drag
     private float dX, dY;
 

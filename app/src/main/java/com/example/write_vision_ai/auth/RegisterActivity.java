@@ -1,4 +1,4 @@
-package com.example.write_vision_ai.register;
+package com.example.write_vision_ai.auth;
 
 import android.app.ProgressDialog;
 import android.os.Bundle;
@@ -15,8 +15,6 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.write_vision_ai.login.LoginActivity;
-import com.example.write_vision_ai.main.MainActivity;
 import com.example.write_vision_ai.R;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
