@@ -40,6 +40,7 @@
         <activity android:name=".main.CameraActivity" />
         <activity android:name=".drawing.SelectFrameActivity" />
         <activity android:name=".main.ComposeActivity" />
+        <activity android:name=".main.PdfListActivity" />
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.provider"

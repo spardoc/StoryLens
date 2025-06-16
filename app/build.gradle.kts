@@ -50,9 +50,11 @@ android {
 }
 
 dependencies {
-
-
     implementation(platform("com.google.firebase:firebase-bom:33.13.0"))
+    implementation("com.google.firebase:firebase-appcheck-safetynet:16.1.2")
+    implementation("com.google.firebase:firebase-appcheck-ktx")     
+    implementation("com.google.firebase:firebase-appcheck-interop")
+    implementation("com.google.firebase:firebase-common-ktx")
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.storage)
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.3")
@@ -77,6 +79,4 @@ dependencies {
     implementation(libs.camerax.lifecycle)
     implementation(libs.camerax.view)
     implementation("com.google.guava:guava:31.1-jre")
-
 }
-

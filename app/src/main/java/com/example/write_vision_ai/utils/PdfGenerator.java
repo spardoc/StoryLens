@@ -8,16 +8,61 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.pdf.PdfDocument;
 import android.net.Uri;
+import android.os.Handler;
+import android.os.Looper;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 
 public class PdfGenerator {
 
-    public static void export(Context context, List<Bitmap> images, String fileName) throws IOException {
+    public interface PdfExportCallback {
+        void onSuccess(File pdfFile);
+        void onFailure(Exception e);
+    }
+
+    public static void generateAndSavePdf(Context context, List<String> imagePaths, String fileName, PdfExportCallback callback) {
+        new Thread(() -> {
+            try {
+                List<Bitmap> bitmaps = new ArrayList<>();
+                for (String path : imagePaths) {
+                    Bitmap bitmap = loadBitmap(context, path);
+                    if (bitmap != null) bitmaps.add(bitmap);
+                }
+
+                if (bitmaps.isEmpty()) throw new IOException("No se pudieron cargar las imágenes.");
+
+                File pdfFile = export(context, bitmaps, fileName);
+
+                new Handler(Looper.getMainLooper()).post(() -> callback.onSuccess(pdfFile));
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                new Handler(Looper.getMainLooper()).post(() -> callback.onFailure(e));
+            }
+        }).start();
+    }
+
+    private static Bitmap loadBitmap(Context context, String path) {
+        try {
+            if (path.startsWith("http://") || path.startsWith("https://")) {
+                return BitmapFactory.decodeStream(new URL(path).openStream());
+            } else if (path.startsWith("content://")) {
+                InputStream input = context.getContentResolver().openInputStream(Uri.parse(path));
+                return BitmapFactory.decodeStream(input);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static File export(Context context, List<Bitmap> images, String fileName) throws IOException {
         int factor = 2;
         int pageWidth = 595 * factor;
         int pageHeight = 842 * factor;
@@ -27,33 +72,33 @@ public class PdfGenerator {
         Paint borderPaint = new Paint();
         borderPaint.setColor(Color.BLACK);
         borderPaint.setStyle(Paint.Style.STROKE);
-        borderPaint.setStrokeWidth(6); // Borde tipo cómic
+        borderPaint.setStrokeWidth(10);  // Borde grueso tipo cómic
 
-        int margin = 20 * factor;
-        int cols = 2;
-        int rows = 4;
-        int imgW = (pageWidth - (cols + 1) * margin) / cols;
-        int imgH = imgW;
+        int margin = 8 * factor;           // ← reducido (antes 20*f)
+        int spacing = 10 * factor;         // espacio entre imágenes
+        int cols = 2, rows = 4;
+        int imgW = (pageWidth - (cols * margin) - ((cols - 1) * spacing)) / cols;
+        int imgH = (pageHeight - (rows * margin) - ((rows - 1) * spacing)) / rows;
 
         PdfDocument.PageInfo pi = new PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 1).create();
-        int x = margin, y = margin, count = 0;
         PdfDocument.Page page = pdf.startPage(pi);
         Canvas c = page.getCanvas();
+
+        int x = margin, y = margin, count = 0;
 
         for (Bitmap bmp : images) {
             Bitmap scaled = Bitmap.createScaledBitmap(bmp, imgW, imgH, true);
             c.drawBitmap(scaled, x, y, paint);
-
-            // Borde negro estilo cómic
             c.drawRect(x, y, x + imgW, y + imgH, borderPaint);
 
             count++;
             if (count % cols == 0) {
                 x = margin;
-                y += imgH + margin;
+                y += imgH + spacing;
             } else {
-                x += imgW + margin;
+                x += imgW + spacing;
             }
+
             if (count % (cols * rows) == 0 && count < images.size()) {
                 pdf.finishPage(page);
                 pi = new PdfDocument.PageInfo.Builder(pageWidth, pageHeight, (count / (cols * rows)) + 1).create();
@@ -63,34 +108,15 @@ public class PdfGenerator {
                 y = margin;
             }
         }
+
         pdf.finishPage(page);
 
         File pdfFile = new File(context.getExternalFilesDir(null), fileName);
-        pdfFile.createNewFile();
         try (FileOutputStream fos = new FileOutputStream(pdfFile)) {
             pdf.writeTo(fos);
         }
         pdf.close();
-    }
 
-    // Métodos auxiliares para cargar bitmaps desde URL o URI
-    public static Bitmap loadBitmapFromUrl(String url) {
-        try {
-            InputStream input = new URL(url).openStream();
-            return BitmapFactory.decodeStream(input);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    public static Bitmap loadBitmapFromUri(Context context, String uriString) {
-        try {
-            InputStream input = context.getContentResolver().openInputStream(Uri.parse(uriString));
-            return BitmapFactory.decodeStream(input);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
+        return pdfFile;
     }
 }

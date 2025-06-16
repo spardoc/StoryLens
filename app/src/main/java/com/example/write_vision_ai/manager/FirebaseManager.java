@@ -1,5 +1,10 @@
 package com.example.write_vision_ai.manager;
 
+import android.content.Context;
+
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.appcheck.FirebaseAppCheck;
+import com.google.firebase.appcheck.safetynet.SafetyNetAppCheckProviderFactory;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 
@@ -7,10 +12,14 @@ public class FirebaseManager {
     private static FirebaseAuth mAuth;
     private static FirebaseFirestore db;
 
-    public static void initialize() {
+    public static void initialize(Context context) {
+        FirebaseApp.initializeApp(context);
+        FirebaseAppCheck firebaseAppCheck = FirebaseAppCheck.getInstance();
+        firebaseAppCheck.installAppCheckProviderFactory(SafetyNetAppCheckProviderFactory.getInstance());
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
     }
+
 
     public static FirebaseAuth getAuth() {
         return mAuth;
