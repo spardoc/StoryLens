@@ -2,89 +2,119 @@
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/mainLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="#FAFAFA"
-    android:padding="8dp"
     tools:context=".main.MainActivity">
 
-    <!-- Header con título y botón de logout -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingBottom="16dp">
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Crea tu Historia"
-            android:textSize="20sp"
-            android:textColor="#333333"
-            android:textStyle="bold"/>
-
-        <Button
-            android:id="@+id/btnLogout"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Cerrar sesión"
-            android:backgroundTint="#6200EE"
-            android:textColor="#FFFFFF"
-            android:paddingHorizontal="16dp"/>
-    </LinearLayout>
-
-    <!-- Historia interactiva -->
-    <TextView
-        android:id="@+id/tvInteractiveStory"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:textSize="16sp"
-        android:textColor="#333333"
-        android:padding="16dp"
-        android:background="#F5F5F5"
-        android:layout_marginBottom="8dp"
-        android:textIsSelectable="true"/>
-
-    <!-- Resto del layout se mantiene igual -->
-    <Button
-        android:id="@+id/btnGenerate"
-        android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:text="Generar imágenes"
-        android:layout_marginTop="8dp"
-        android:backgroundTint="#6200EE"
-        android:textColor="#FFFFFF"
-        android:textAllCaps="false"
-        android:textSize="16sp"/>
-
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerView"
+    <!-- Sección de creación de historia -->
+    <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:padding="8dp" />
+        android:padding="8dp">
 
-    <Button
-        android:id="@+id/btnExportPdf"
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Header -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingBottom="16dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Crea tu Historia"
+                    android:textSize="20sp"
+                    android:textColor="#333333"
+                    android:textStyle="bold"/>
+
+                <Button
+                    android:id="@+id/btnLogout"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Cerrar sesión"
+                    android:backgroundTint="#6200EE"
+                    android:textColor="#FFFFFF"/>
+            </LinearLayout>
+
+            <!-- Historia interactiva -->
+            <TextView
+                android:id="@+id/tvInteractiveStory"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="16sp"
+                android:textColor="#333333"
+                android:padding="16dp"
+                android:background="#F5F5F5"/>
+
+            <!-- Botón generar imágenes -->
+            <Button
+                android:id="@+id/btnGenerate"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:text="Generar imágenes"
+                android:layout_marginTop="8dp"
+                android:backgroundTint="#6200EE"
+                android:textColor="#FFFFFF"/>
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- Sección de resultados (inicialmente oculta) -->
+    <!-- Añade esto al final del LinearLayout principal -->
+    <FrameLayout
+        android:id="@+id/resultsSection"
         android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:text="Exportar imágenes"
-        android:layout_marginTop="8dp"
-        android:layout_marginBottom="8dp"
-        android:backgroundTint="#03DAC6"
-        android:textColor="#000000"
-        android:textAllCaps="false"
-        android:textSize="16sp"/>
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:visibility="gone">
 
-    <Button
-        android:id="@+id/btnVerPdfs"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Ver PDFs generados"
-        android:layout_marginBottom="16dp"
-        android:layout_gravity="center_horizontal" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Tus Imágenes Generadas"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:padding="8dp"/>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerView"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:padding="8dp"/>
+
+            <Button
+                android:id="@+id/btnExportPdf"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:text="Exportar a PDF"
+                android:layout_margin="8dp"
+                android:backgroundTint="#6200EE"
+                android:textColor="#FFFFFF"/>
+
+            <Button
+                android:id="@+id/btnVerPdfs"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:text="Ver PDFs generados"
+                android:layout_margin="8dp"
+                android:backgroundTint="#03DAC6"
+                android:textColor="#000000"/>
+        </LinearLayout>
+    </FrameLayout>
 </LinearLayout>
