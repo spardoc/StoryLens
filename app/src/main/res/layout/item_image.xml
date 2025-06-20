@@ -45,25 +45,6 @@
                 android:backgroundTint="#6200EE"
                 android:textColor="#FFFFFF"/>
 
-            <Button
-                android:id="@+id/btnExport"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Exportar"
-                android:layout_marginHorizontal="4dp"
-                android:backgroundTint="#03DAC6"
-                android:textColor="#000000"/>
-
-            <Button
-                android:id="@+id/btnDelete"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Eliminar"
-                android:layout_marginStart="4dp"
-                android:backgroundTint="#FF0000"
-                android:textColor="#FFFFFF"/>
         </LinearLayout>
     </LinearLayout>
 </androidx.cardview.widget.CardView>

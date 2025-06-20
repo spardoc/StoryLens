@@ -51,8 +51,7 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ViewHolder> 
         holder.tvImageNumber.setText("Imagen " + (position + 1));
 
         holder.btnAddText.setOnClickListener(v -> listener.onAddTextClicked(url));
-        holder.btnExport.setOnClickListener(v -> listener.onExportImageClicked(url));
-        holder.btnDelete.setOnClickListener(v -> listener.onDeleteImageClicked(position));
+
     }
 
     @Override
@@ -78,8 +77,7 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ViewHolder> 
             super(view);
             imageView = view.findViewById(R.id.imageView);
             btnAddText = view.findViewById(R.id.btnAddText);
-            btnExport = view.findViewById(R.id.btnExport);
-            btnDelete = view.findViewById(R.id.btnDelete);
+
             tvImageNumber = view.findViewById(R.id.tvImageNumber);
         }
     }
