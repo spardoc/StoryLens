@@ -8,8 +8,5 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="gray_200">#918F92</color>
-
-
-
-
+    <color name="azul_status">#8ed3ce</color> <!-- amarillo brillante -->
 </resources>

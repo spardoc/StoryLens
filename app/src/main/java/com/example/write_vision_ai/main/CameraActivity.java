@@ -8,12 +8,14 @@ import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCaptureException;
@@ -44,7 +46,8 @@ public class CameraActivity extends AppCompatActivity {
 
     private PreviewView previewView;
     private ImageView imageCaptureView;
-    private Button btnCapture, btnConfirm, btnRetry;
+    private ImageButton btnCapture;
+    private Button  btnConfirm, btnRetry;
     private LinearLayout controlsLayout;
     private ImageCapture imageCapture;
 
@@ -53,6 +56,7 @@ public class CameraActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
         if (getSupportActionBar() != null) {
             getSupportActionBar().hide();
         }

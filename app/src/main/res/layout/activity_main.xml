@@ -44,7 +44,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Cerrar sesión"
-                    android:backgroundTint="#6200EE"
+                    android:backgroundTint="#f43f3f"
                     android:textColor="#FFFFFF"/>
             </LinearLayout>
 
@@ -65,7 +65,7 @@
                 android:layout_height="48dp"
                 android:text="Generar imágenes"
                 android:layout_marginTop="8dp"
-                android:backgroundTint="#6200EE"
+                android:backgroundTint="#95f682"
                 android:textColor="#FFFFFF"/>
         </LinearLayout>
     </ScrollView>
@@ -106,7 +106,7 @@
                 android:layout_height="48dp"
                 android:text="Exportar a PDF"
                 android:layout_margin="8dp"
-                android:backgroundTint="#6200EE"
+                android:backgroundTint="#f43f3f"
                 android:textColor="#FFFFFF"/>
 
             <Button
