@@ -32,10 +32,12 @@ public class LoginActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().hide();
+        }
         if (getIntent().getBooleanExtra("register_success", false)) {
             Toast.makeText(this, "Registro exitoso. Ahora puedes iniciar sesión.", Toast.LENGTH_LONG).show();
         }
-
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
         this.setTitle("Login");
