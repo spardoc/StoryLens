@@ -62,8 +62,10 @@ public class ImageGenerator {
                 selection = StoryConstants.options[i][0]; // Valor por defecto
             }
 
-            String prompt = String.format(basePrompts[i], selection);
-            Log.d("PROMPT_DEBUG", "Prompt " + i + ": " + prompt); // Para depuración
+            String prompt = StoryConstants.comicStyleJSONPrompt + "\n" +
+                    "Please illustrate the following story scene: " +
+                    String.format(basePrompts[i], selection);
+            prompt = StoryConstants.comicStyleJSONPrompt + "\n" + prompt;
             generateImage(prompt);
         }
     }

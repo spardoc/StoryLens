@@ -68,11 +68,8 @@ public class MainActivity extends AppCompatActivity implements ImageAdapter.OnIm
                 .baseUrl("https://api.openai.com/") // URL base de OpenAI
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
-
         apiService = retrofit.create(ApiService.class);
     }
-
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
