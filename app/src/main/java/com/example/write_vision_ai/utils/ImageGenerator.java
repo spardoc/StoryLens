@@ -24,7 +24,7 @@ import retrofit2.Response;
 public class ImageGenerator {
 
     private final Context context;
-    private final String[] currentSelections;  // Cambiado de List<Spinner> a String[]
+    private final String[] currentSelections;
     private final String[] basePrompts;
     private final List<String> imageUrls;
     private final RecyclerView.Adapter<?> imageAdapter;
@@ -32,7 +32,7 @@ public class ImageGenerator {
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     public ImageGenerator(Context context,
-                          String[] currentSelections,  // Cambiado el parámetro
+                          String[] currentSelections,
                           String[] basePrompts,
                           List<String> imageUrls,
                           RecyclerView.Adapter<?> imageAdapter,
@@ -50,27 +50,36 @@ public class ImageGenerator {
         imageUrls.clear();
         mainHandler.post(() -> imageAdapter.notifyDataSetChanged());
 
-        // Verifica que tengamos suficientes selecciones
         if (currentSelections.length != basePrompts.length) {
             Log.e("ERROR", "El número de selecciones no coincide con los prompts");
             return;
         }
 
-        for (int i = 0; i < currentSelections.length; i++) {
-            String selection = currentSelections[i];
-            if (selection == null) {
-                selection = StoryConstants.options[i][0]; // Valor por defecto
-            }
-
-            String prompt = StoryConstants.comicStyleJSONPrompt + "\n" +
-                    "Please illustrate the following story scene: " +
-                    String.format(basePrompts[i], selection);
-            prompt = StoryConstants.comicStyleJSONPrompt + "\n" + prompt;
-            generateImage(prompt);
-        }
+        generateImageSequentially(0);  // Iniciar secuencia
     }
 
-    private void generateImage(String prompt) {
+    private void generateImageSequentially(int index) {
+
+
+        if (index >= currentSelections.length) {
+            Toast.makeText(context, "Generación de imágenes completada ✅", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Toast.makeText(context,
+                "Generando imagen " + (index + 1) + " de " + currentSelections.length,
+                Toast.LENGTH_SHORT).show();
+
+
+        String selection = currentSelections[index];
+        if (selection == null) {
+            selection = StoryConstants.options[index][0]; // Valor por defecto
+        }
+
+        String prompt = StoryConstants.comicStyleJSONPrompt + "\n" +
+                "Please illustrate the following story scene: " +
+                String.format(basePrompts[index], selection);
+        prompt = StoryConstants.comicStyleJSONPrompt + "\n" + prompt;
+
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("model", "dall-e-3");
         requestBody.put("prompt", prompt);
@@ -85,9 +94,7 @@ public class ImageGenerator {
                     String imageUrl = response.body().getData().get(0).getUrl();
                     Log.d("IMAGE_ADDED", "URL: " + imageUrl);
                     imageUrls.add(imageUrl);
-
                     mainHandler.post(() -> imageAdapter.notifyDataSetChanged());
-
                 } else {
                     Log.e("IMAGE_ERROR", "Código: " + response.code());
                     Log.e("IMAGE_ERROR", "Mensaje: " + response.message());
@@ -104,12 +111,18 @@ public class ImageGenerator {
                     mainHandler.post(() ->
                             Toast.makeText(context, "Error en la respuesta", Toast.LENGTH_SHORT).show());
                 }
+
+                // Esperar 3 segundos antes de lanzar el siguiente
+                mainHandler.postDelayed(() -> generateImageSequentially(index + 1), 3000);
             }
 
             @Override
             public void onFailure(Call<ImageResponse> call, Throwable t) {
                 mainHandler.post(() ->
                         Toast.makeText(context, "Error en la conexión", Toast.LENGTH_SHORT).show());
+
+                // Esperar 1.2 segundos antes de continuar
+                mainHandler.postDelayed(() -> generateImageSequentially(index + 1), 1200);
             }
         });
     }
