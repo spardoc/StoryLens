@@ -1,10 +1,10 @@
 package com.example.write_vision_ai.utils;
 
+
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
-import android.widget.Spinner;
 import android.widget.Toast;
 
 import androidx.recyclerview.widget.RecyclerView;
@@ -24,22 +24,21 @@ import retrofit2.Response;
 public class ImageGenerator {
 
     private final Context context;
-    private final List<Spinner> spinners;
+    private final String[] currentSelections;  // Cambiado de List<Spinner> a String[]
     private final String[] basePrompts;
     private final List<String> imageUrls;
     private final RecyclerView.Adapter<?> imageAdapter;
-    private final ApiService apiService;  // Define tu interfaz Retrofit
-
+    private final ApiService apiService;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     public ImageGenerator(Context context,
-                          List<Spinner> spinners,
+                          String[] currentSelections,  // Cambiado el parámetro
                           String[] basePrompts,
                           List<String> imageUrls,
                           RecyclerView.Adapter<?> imageAdapter,
                           ApiService apiService) {
         this.context = context;
-        this.spinners = spinners;
+        this.currentSelections = currentSelections;
         this.basePrompts = basePrompts;
         this.imageUrls = imageUrls;
         this.imageAdapter = imageAdapter;
@@ -47,19 +46,29 @@ public class ImageGenerator {
     }
 
     public void generateImages() {
-        Log.d("DEBUG", "spinners size: " + spinners.size());
+        Log.d("DEBUG", "currentSelections length: " + currentSelections.length);
         imageUrls.clear();
         mainHandler.post(() -> imageAdapter.notifyDataSetChanged());
 
-        for (int i = 0; i < spinners.size(); i++) {
-            String selection = spinners.get(i).getSelectedItem().toString();
+        // Verifica que tengamos suficientes selecciones
+        if (currentSelections.length != basePrompts.length) {
+            Log.e("ERROR", "El número de selecciones no coincide con los prompts");
+            return;
+        }
+
+        for (int i = 0; i < currentSelections.length; i++) {
+            String selection = currentSelections[i];
+            if (selection == null) {
+                selection = StoryConstants.options[i][0]; // Valor por defecto
+            }
+
             String prompt = String.format(basePrompts[i], selection);
+            Log.d("PROMPT_DEBUG", "Prompt " + i + ": " + prompt); // Para depuración
             generateImage(prompt);
         }
     }
 
     private void generateImage(String prompt) {
-
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("model", "dall-e-3");
         requestBody.put("prompt", prompt);

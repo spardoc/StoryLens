@@ -1,11 +1,19 @@
 package com.example.write_vision_ai.main;
 
+
 import android.Manifest;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.SpannableStringBuilder;
+import android.text.Spanned;
+import android.text.TextPaint;
+import android.text.method.LinkMovementMethod;
+import android.text.style.ClickableSpan;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.*;
 
@@ -43,12 +51,12 @@ public class MainActivity extends AppCompatActivity implements ImageAdapter.OnAd
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
     private final List<String> imageUrls = new ArrayList<>();
-    private final List<Spinner> spinners = new ArrayList<>();
-    private LinearLayout storyLayout;
-    private TextView tvStoryPreview;
+    private TextView tvInteractiveStory;
+    private String[] currentSelections;
+    private SpannableStringBuilder interactiveStoryBuilder;
 
     private static final int REQ_CAPTURE_TEXT = 2001;
-    private static final int REQ_SELECT_FRAME  = 2002;
+    private static final int REQ_SELECT_FRAME = 2002;
     private int pendingImageIndex = -1;
 
     @Override
@@ -66,7 +74,7 @@ public class MainActivity extends AppCompatActivity implements ImageAdapter.OnAd
         // Inicializar Firebase y AppCheck
         FirebaseManager.initialize(this);
         mAuth = FirebaseManager.getAuth();
-        db    = FirebaseManager.getFirestore();
+        db = FirebaseManager.getFirestore();
 
         // Vistas
         initializeViews();
@@ -85,13 +93,37 @@ public class MainActivity extends AppCompatActivity implements ImageAdapter.OnAd
                 startActivity(new Intent(MainActivity.this, PdfListActivity.class))
         );
 
-        // Construir el formulario de historia
-        buildStoryForm(StoryConstants.basePrompts, StoryConstants.options);
+        // Inicializar selecciones
+        currentSelections = new String[StoryConstants.basePrompts.length];
+        for (int i = 0; i < StoryConstants.options.length; i++) {
+            currentSelections[i] = StoryConstants.options[i][0];
+        }
+        Arrays.fill(currentSelections, StoryConstants.options[0][0]); // Valor por defecto
+
+        // Construir historia interactiva
+        buildInteractiveStory();
+
+        // Configurar clics en palabras variables
+        tvInteractiveStory.setMovementMethod(LinkMovementMethod.getInstance());
+        tvInteractiveStory.setOnTouchListener((v, event) -> {
+            if (event.getAction() == MotionEvent.ACTION_UP) {
+                int offset = getOffsetForPosition(tvInteractiveStory, event.getX(), event.getY());
+                if (offset != -1) {
+                    ClickableSpan[] links = interactiveStoryBuilder.getSpans(offset, offset, ClickableSpan.class);
+                    if (links.length > 0) {
+                        links[0].onClick(tvInteractiveStory);
+                        return true;
+                    }
+                }
+            }
+            return false;
+        });
 
         // Generador de imágenes
+        // Cambia esta línea en el onCreate():
         ImageGenerator imageGenerator = new ImageGenerator(
                 this,
-                spinners,
+                currentSelections, // Ahora es String[] en lugar de List<Spinner>
                 StoryConstants.basePrompts,
                 imageUrls,
                 imageAdapter,
@@ -101,6 +133,73 @@ public class MainActivity extends AppCompatActivity implements ImageAdapter.OnAd
 
         // Configurar exportación de PDF
         setupExportPdfButton();
+    }
+
+    private void buildInteractiveStory() {
+        interactiveStoryBuilder = new SpannableStringBuilder();
+
+        for (int i = 0; i < StoryConstants.basePrompts.length; i++) {
+            if (currentSelections[i] == null) {
+                currentSelections[i] = StoryConstants.options[i][0];
+            }
+            String prompt = StoryConstants.basePrompts[i];
+            String[] parts = prompt.split("%s");
+
+            // Parte antes del marcador
+            interactiveStoryBuilder.append(parts[0]);
+
+            // Palabra variable (clickable)
+            int start = interactiveStoryBuilder.length();
+            String selection = currentSelections[i] != null ? currentSelections[i] : StoryConstants.options[i][0];
+            interactiveStoryBuilder.append(selection);
+            interactiveStoryBuilder.setSpan(new VariableWordSpan(i), start, interactiveStoryBuilder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+            // Parte después del marcador (si existe)
+            if (parts.length > 1) {
+                interactiveStoryBuilder.append(parts[1]);
+            }
+
+            interactiveStoryBuilder.append("\n\n");
+        }
+
+        tvInteractiveStory.setText(interactiveStoryBuilder);
+    }
+
+    private class VariableWordSpan extends ClickableSpan {
+        private final int partIndex;
+
+        public VariableWordSpan(int partIndex) {
+            this.partIndex = partIndex;
+        }
+
+        @Override
+        public void onClick(View widget) {
+            showSelectionDialog(partIndex);
+        }
+
+        @Override
+        public void updateDrawState(TextPaint ds) {
+            super.updateDrawState(ds);
+            ds.setColor(Color.BLUE);
+            ds.setUnderlineText(true);
+        }
+    }
+
+    private void showSelectionDialog(int partIndex) {
+        new AlertDialog.Builder(this)
+                .setTitle("Selecciona una opción")
+                .setItems(StoryConstants.options[partIndex], (dialog, which) -> {
+                    currentSelections[partIndex] = StoryConstants.options[partIndex][which];
+                    buildInteractiveStory();
+                })
+                .show();
+    }
+
+    private int getOffsetForPosition(TextView textView, float x, float y) {
+        if (textView.getLayout() == null) return -1;
+
+        int line = textView.getLayout().getLineForVertical((int) y);
+        return textView.getLayout().getOffsetForHorizontal(line, x);
     }
 
     @Override
@@ -130,13 +229,12 @@ public class MainActivity extends AppCompatActivity implements ImageAdapter.OnAd
     }
 
     private void initializeViews() {
-        btnGenerate    = findViewById(R.id.btnGenerate);
-        btnLogout      = findViewById(R.id.btnLogout);
-        btnExportPdf   = findViewById(R.id.btnExportPdf);
-        btnVerPdfs     = findViewById(R.id.btnVerPdfs);
-        recyclerView   = findViewById(R.id.recyclerView);
-        storyLayout    = findViewById(R.id.storyLayout);
-        tvStoryPreview = findViewById(R.id.tvStoryPreview);
+        btnGenerate = findViewById(R.id.btnGenerate);
+        btnLogout = findViewById(R.id.btnLogout);
+        btnExportPdf = findViewById(R.id.btnExportPdf);
+        btnVerPdfs = findViewById(R.id.btnVerPdfs);
+        recyclerView = findViewById(R.id.recyclerView);
+        tvInteractiveStory = findViewById(R.id.tvInteractiveStory);
     }
 
     private void setupRecyclerView() {
@@ -148,14 +246,17 @@ public class MainActivity extends AppCompatActivity implements ImageAdapter.OnAd
     private void setupLogoutButton() {
         btnLogout.setOnClickListener(v ->
                 FirebaseManager.logout(new FirebaseManager.OnLogoutListener() {
-                    @Override public void onLogoutSuccess() {
+                    @Override
+                    public void onLogoutSuccess() {
                         runOnUiThread(() -> {
                             Toast.makeText(MainActivity.this, "Sesión cerrada", Toast.LENGTH_SHORT).show();
                             startActivity(new Intent(MainActivity.this, LoginActivity.class));
                             finish();
                         });
                     }
-                    @Override public void onLogoutFailure(String error) {
+
+                    @Override
+                    public void onLogoutFailure(String error) {
                         runOnUiThread(() ->
                                 Toast.makeText(MainActivity.this, "Error al cerrar sesión: " + error,
                                         Toast.LENGTH_SHORT).show());
@@ -185,11 +286,14 @@ public class MainActivity extends AppCompatActivity implements ImageAdapter.OnAd
         PdfGenerator.generateAndSavePdf(
                 this, paths, fileName,
                 new PdfGenerator.PdfExportCallback() {
-                    @Override public void onSuccess(File pdfFile) {
+                    @Override
+                    public void onSuccess(File pdfFile) {
                         abrirPdfGenerado(fileName);
                         uploadPdfToFirebase(pdfFile);
                     }
-                    @Override public void onFailure(Exception e) {
+
+                    @Override
+                    public void onFailure(Exception e) {
                         Toast.makeText(MainActivity.this,
                                 "Error al generar PDF", Toast.LENGTH_SHORT).show();
                     }
@@ -214,7 +318,7 @@ public class MainActivity extends AppCompatActivity implements ImageAdapter.OnAd
 
     private void uploadPdfToFirebase(File pdfFile) {
         String userId = mAuth.getCurrentUser().getUid();
-        Uri    uri    = Uri.fromFile(pdfFile);
+        Uri uri = Uri.fromFile(pdfFile);
         StorageReference ref = FirebaseStorage.getInstance()
                 .getReference("pdfs/" + userId + "/" + pdfFile.getName());
 
@@ -226,49 +330,5 @@ public class MainActivity extends AppCompatActivity implements ImageAdapter.OnAd
                         Toast.makeText(this, "Error al subir PDF: " + e.getMessage(),
                                 Toast.LENGTH_LONG).show()
                 );
-    }
-
-    private void buildStoryForm(String[] storyParts, String[][] options) {
-        for (int i = 0; i < storyParts.length; i++) {
-            LinearLayout item = new LinearLayout(this);
-            item.setOrientation(LinearLayout.VERTICAL);
-            item.setPadding(16, 16, 16, 16);
-
-            TextView tvPart = new TextView(this);
-            tvPart.setText(storyParts[i]);
-            tvPart.setTextSize(18);
-            item.addView(tvPart);
-
-            Spinner spinner = new Spinner(this);
-            ArrayAdapter<String> adapter = new ArrayAdapter<>(
-                    this, R.layout.spinner_item, options[i]
-            );
-            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-            spinner.setAdapter(adapter);
-
-            final int idx = i;
-            spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-                @Override public void onItemSelected(AdapterView<?> p, View v, int pos, long id) {
-                    updateStoryPreview(idx, p.getItemAtPosition(pos).toString());
-                }
-                @Override public void onNothingSelected(AdapterView<?> p) {}
-            });
-
-            spinners.add(spinner);
-            item.addView(spinner);
-            storyLayout.addView(item);
-        }
-    }
-
-    private void updateStoryPreview(int changedIndex, String selection) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < spinners.size(); i++) {
-            String sel = (i == changedIndex)
-                    ? selection
-                    : spinners.get(i).getSelectedItem().toString();
-            sb.append(String.format(StoryConstants.basePrompts[i], sel))
-                    .append("\n\n");
-        }
-        tvStoryPreview.setText(sb.toString());
     }
 }

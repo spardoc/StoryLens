@@ -37,39 +37,19 @@
             android:paddingHorizontal="16dp"/>
     </LinearLayout>
 
-    <!-- Previsualización de la historia -->
+    <!-- Historia interactiva -->
     <TextView
-        android:id="@+id/tvStoryPreview"
+        android:id="@+id/tvInteractiveStory"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:textSize="16sp"
         android:textColor="#333333"
         android:padding="16dp"
         android:background="#F5F5F5"
-        android:layout_marginBottom="8dp"/>
+        android:layout_marginBottom="8dp"
+        android:textIsSelectable="true"/>
 
-    <!-- ScrollView con el contenido de la historia -->
-    <ScrollView
-        android:id="@+id/storyScroll"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:fillViewport="true"
-        android:background="#FFFFFF"
-        android:padding="8dp">
-
-        <LinearLayout
-            android:id="@+id/storyLayout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-
-            <!-- Las opciones se generan dinámicamente desde el código -->
-
-        </LinearLayout>
-    </ScrollView>
-
-    <!-- Botón generar imágenes -->
+    <!-- Resto del layout se mantiene igual -->
     <Button
         android:id="@+id/btnGenerate"
         android:layout_width="match_parent"
@@ -81,7 +61,6 @@
         android:textAllCaps="false"
         android:textSize="16sp"/>
 
-    <!-- RecyclerView para mostrar las imágenes -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
         android:layout_width="match_parent"
@@ -89,7 +68,6 @@
         android:layout_weight="1"
         android:padding="8dp" />
 
-    <!-- Botón exportar imágenes -->
     <Button
         android:id="@+id/btnExportPdf"
         android:layout_width="match_parent"
@@ -109,5 +87,4 @@
         android:text="Ver PDFs generados"
         android:layout_marginBottom="16dp"
         android:layout_gravity="center_horizontal" />
-
 </LinearLayout>

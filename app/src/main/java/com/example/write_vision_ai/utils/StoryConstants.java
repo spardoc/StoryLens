@@ -1,15 +1,16 @@
 package com.example.write_vision_ai.utils;
 
+
 public class StoryConstants {
     public static final String[][] options = {
-            {"un niño", "una niña", "un perro", "un gato"},
-            {"una flor mágica", "una piedra brillante", "una hoja gigante"},
-            {"un camino dorado", "una huella misteriosa", "un mapa antiguo"},
-            {"un árbol parlante", "una cueva secreta", "un castillo en miniatura"},
-            {"una ardilla sabia", "un búho cantante", "un ratón inventor"},
-            {"una bicicleta voladora", "un paraguas que habla", "un robot de hojas"},
-            {"una nube gigante", "un monstruo de chocolate", "una sombra traviesa"},
-            {"una fiesta de globos", "una danza mágica", "un picnic de estrellas"}
+            {"un niño", "una niña", "un perro", "un gato"},            // Personaje principal
+            {"una flor mágica", "una piedra brillante", "una hoja gigante"}, // Objeto encontrado
+            {"un camino dorado", "una huella misteriosa", "un mapa antiguo"}, // Camino a seguir
+            {"un árbol parlante", "una cueva secreta", "un castillo en miniatura"}, // Lugar
+            {"una ardilla sabia", "un búho cantante", "un ratón inventor"},   // Personaje secundario
+            {"una bicicleta voladora", "un paraguas que habla", "un robot de hojas"}, // Invento
+            {"una nube gigante", "un monstruo de chocolate", "una sombra traviesa"}, // Antagonista
+            {"una fiesta de globos", "una danza mágica", "un picnic de estrellas"}  // Final
     };
 
     public static final String[] basePrompts = {
