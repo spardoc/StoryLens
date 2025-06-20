@@ -165,6 +165,9 @@ public class MainActivity extends AppCompatActivity implements ImageAdapter.OnIm
                     apiService
             );
             imageGenerator.generateImages();
+
+            ScrollView storyScroll = findViewById(R.id.storyScroll);
+            storyScroll.setVisibility(View.GONE); // Oculta historia
             resultsSection.setVisibility(View.VISIBLE);
             recyclerView.post(() -> recyclerView.smoothScrollToPosition(0));
         });
