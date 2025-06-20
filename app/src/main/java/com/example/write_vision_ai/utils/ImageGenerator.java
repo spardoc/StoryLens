@@ -1,6 +1,5 @@
 package com.example.write_vision_ai.utils;
 
-
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
@@ -23,6 +22,11 @@ import retrofit2.Response;
 
 public class ImageGenerator {
 
+    public interface GenerateImagesCallback {
+        void onAllImagesGenerated(); // Se llama cuando todas las imágenes están listas
+        void onError(String error);  // Se llama si hay un error
+    }
+
     private final Context context;
     private final String[] currentSelections;
     private final String[] basePrompts;
@@ -30,19 +34,22 @@ public class ImageGenerator {
     private final RecyclerView.Adapter<?> imageAdapter;
     private final ApiService apiService;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private GenerateImagesCallback callback;
 
     public ImageGenerator(Context context,
                           String[] currentSelections,
                           String[] basePrompts,
                           List<String> imageUrls,
                           RecyclerView.Adapter<?> imageAdapter,
-                          ApiService apiService) {
+                          ApiService apiService,
+                          GenerateImagesCallback callback) { // Añade el callback
         this.context = context;
         this.currentSelections = currentSelections;
         this.basePrompts = basePrompts;
         this.imageUrls = imageUrls;
         this.imageAdapter = imageAdapter;
         this.apiService = apiService;
+        this.callback = callback;
     }
 
     public void generateImages() {
@@ -51,24 +58,23 @@ public class ImageGenerator {
         mainHandler.post(() -> imageAdapter.notifyDataSetChanged());
 
         if (currentSelections.length != basePrompts.length) {
-            Log.e("ERROR", "El número de selecciones no coincide con los prompts");
+            String error = "El número de selecciones no coincide con los prompts";
+            Log.e("ERROR", error);
+            if (callback != null) callback.onError(error);
             return;
         }
 
-        generateImageSequentially(0);  // Iniciar secuencia
+        generateImageSequentially(0); // Iniciar secuencia
     }
 
     private void generateImageSequentially(int index) {
-
-
         if (index >= currentSelections.length) {
-            Toast.makeText(context, "Generación de imágenes completada ✅", Toast.LENGTH_SHORT).show();
+            mainHandler.post(() -> {
+                Toast.makeText(context, "Generación completada ✅", Toast.LENGTH_SHORT).show();
+                if (callback != null) callback.onAllImagesGenerated(); // Notificar éxito
+            });
             return;
         }
-        Toast.makeText(context,
-                "Generando imagen " + (index + 1) + " de " + currentSelections.length,
-                Toast.LENGTH_SHORT).show();
-
 
         String selection = currentSelections[index];
         if (selection == null) {
@@ -78,7 +84,6 @@ public class ImageGenerator {
         String prompt = StoryConstants.comicStyleJSONPrompt + "\n" +
                 "Please illustrate the following story scene: " +
                 String.format(basePrompts[index], selection);
-        prompt = StoryConstants.comicStyleJSONPrompt + "\n" + prompt;
 
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("model", "dall-e-3");
@@ -92,36 +97,20 @@ public class ImageGenerator {
             public void onResponse(Call<ImageResponse> call, Response<ImageResponse> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     String imageUrl = response.body().getData().get(0).getUrl();
-                    Log.d("IMAGE_ADDED", "URL: " + imageUrl);
                     imageUrls.add(imageUrl);
                     mainHandler.post(() -> imageAdapter.notifyDataSetChanged());
                 } else {
-                    Log.e("IMAGE_ERROR", "Código: " + response.code());
-                    Log.e("IMAGE_ERROR", "Mensaje: " + response.message());
-
-                    try {
-                        if (response.errorBody() != null) {
-                            String errorBody = response.errorBody().string();
-                            Log.e("IMAGE_ERROR", "Cuerpo de error: " + errorBody);
-                        }
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-
-                    mainHandler.post(() ->
-                            Toast.makeText(context, "Error en la respuesta", Toast.LENGTH_SHORT).show());
+                    String error = "Error en la respuesta: " + response.code();
+                    Log.e("IMAGE_ERROR", error);
+                    if (callback != null) callback.onError(error);
                 }
-
-                // Esperar 3 segundos antes de lanzar el siguiente
                 mainHandler.postDelayed(() -> generateImageSequentially(index + 1), 3000);
             }
 
             @Override
             public void onFailure(Call<ImageResponse> call, Throwable t) {
-                mainHandler.post(() ->
-                        Toast.makeText(context, "Error en la conexión", Toast.LENGTH_SHORT).show());
-
-                // Esperar 1.2 segundos antes de continuar
+                String error = "Error en la conexión: " + t.getMessage();
+                if (callback != null) callback.onError(error);
                 mainHandler.postDelayed(() -> generateImageSequentially(index + 1), 1200);
             }
         });

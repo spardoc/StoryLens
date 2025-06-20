@@ -150,11 +150,17 @@ public class MainActivity extends AppCompatActivity implements ImageAdapter.OnIm
         btnVerPdfs.setOnClickListener(v -> startActivity(new Intent(this, PdfListActivity.class)));
 
         btnGenerate.setOnClickListener(v -> {
-            // Verificar que apiService no sea nulo
             if (apiService == null) {
                 Toast.makeText(this, "Error: Servicio no disponible", Toast.LENGTH_SHORT).show();
                 return;
             }
+
+            // Mostrar diálogo de carga
+            AlertDialog loadingDialog = new AlertDialog.Builder(this)
+                    .setMessage("Generando imágenes...")
+                    .setCancelable(false) // Evita que el usuario lo cancele
+                    .create();
+            loadingDialog.show();
 
             ImageGenerator imageGenerator = new ImageGenerator(
                     this,
@@ -162,12 +168,32 @@ public class MainActivity extends AppCompatActivity implements ImageAdapter.OnIm
                     StoryConstants.basePrompts,
                     imageUrls,
                     imageAdapter,
-                    apiService
+                    apiService,
+                    new ImageGenerator.GenerateImagesCallback() {
+                        @Override
+                        public void onAllImagesGenerated() {
+                            runOnUiThread(() -> {
+                                if (loadingDialog.isShowing()) {
+                                    loadingDialog.dismiss(); // Cerrar diálogo al terminar
+                                }
+                            });
+                        }
+
+                        @Override
+                        public void onError(String error) {
+                            runOnUiThread(() -> {
+                                if (loadingDialog.isShowing()) {
+                                    loadingDialog.dismiss(); // Cerrar diálogo si hay error
+                                }
+                                Toast.makeText(MainActivity.this, error, Toast.LENGTH_SHORT).show();
+                            });
+                        }
+                    }
             );
             imageGenerator.generateImages();
 
             ScrollView storyScroll = findViewById(R.id.storyScroll);
-            storyScroll.setVisibility(View.GONE); // Oculta historia
+            storyScroll.setVisibility(View.GONE);
             resultsSection.setVisibility(View.VISIBLE);
             recyclerView.post(() -> recyclerView.smoothScrollToPosition(0));
         });
