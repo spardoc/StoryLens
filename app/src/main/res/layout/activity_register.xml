@@ -1,70 +1,73 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/register_image"
-    android:padding="32dp">
+    android:background="@drawable/screen_1"
+    android:padding="24dp">
 
     <LinearLayout
+        android:id="@+id/formulario"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center"
-        android:orientation="vertical">
-
-        <ImageView
-            android:layout_width="150dp"
-            android:layout_height="150dp"
-            android:layout_marginBottom="24dp"
-            android:background="@drawable/circle_shape"
-            android:clipToOutline="true"
-            android:contentDescription="Logo"
-            android:scaleType="centerCrop"
-            android:src="@drawable/img_1" />
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:layout_centerInParent="true">
 
         <EditText
             android:id="@+id/nombre"
-            android:layout_width="match_parent"
+            android:layout_width="280dp"
             android:layout_height="wrap_content"
-            android:background="@drawable/edittext_background"
+            android:background="@drawable/comic_edittext_bg"
             android:hint="Nombre de usuario"
             android:inputType="text"
-            android:padding="12dp"
+            android:padding="14dp"
             android:textColor="#212121"
-            android:textColorHint="#757575" />
+            android:textColorHint="#555555"
+            android:textSize="18sp"
+            android:fontFamily="@font/comicneue_regular"
+            android:layout_marginTop="12dp" />
 
         <EditText
             android:id="@+id/correo"
-            android:layout_width="match_parent"
+            android:layout_width="280dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:background="@drawable/edittext_background"
+            android:background="@drawable/comic_edittext_bg"
             android:hint="Correo electrónico"
             android:inputType="textEmailAddress"
-            android:padding="12dp"
+            android:padding="14dp"
             android:textColor="#212121"
-            android:textColorHint="#757575" />
+            android:textColorHint="#555555"
+            android:textSize="18sp"
+            android:fontFamily="@font/comicneue_regular"
+            android:layout_marginTop="12dp" />
 
         <EditText
             android:id="@+id/contrasena"
-            android:layout_width="match_parent"
+            android:layout_width="280dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:background="@drawable/edittext_background"
+            android:background="@drawable/comic_edittext_bg"
             android:hint="Contraseña"
             android:inputType="textPassword"
-            android:padding="12dp"
+            android:padding="14dp"
             android:textColor="#212121"
-            android:textColorHint="#757575" />
+            android:textColorHint="#555555"
+            android:textSize="18sp"
+            android:fontFamily="@font/comicneue_regular"
+            android:layout_marginTop="12dp" />
 
-        <Button
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btn_registro"
-            android:layout_width="match_parent"
+            android:layout_width="280dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
-            android:backgroundTint="#2F8AD0"
-            android:text="Registrarse"
-            android:textColor="#FFFFFF" />
+            android:background="@drawable/comic_button_blue"
+            android:fontFamily="@font/comicneue_bold"
+            android:text="REGISTRARSE"
+            android:textAllCaps="true"
+            android:textColor="#FFFFFF"
+            android:textSize="20sp"
+            android:textStyle="bold" />
 
         <TextView
             android:id="@+id/goToLogin"
@@ -72,8 +75,10 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:text="¿Ya tienes una cuenta? Inicia sesión"
-            android:textColor="#2196F3"
-            android:textStyle="bold" />
+            android:textColor="#2F8AD0"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:fontFamily="@font/comicneue_bold" />
 
         <ProgressBar
             android:id="@+id/progressBar"
@@ -84,4 +89,4 @@
             android:layout_gravity="center"
             android:layout_marginTop="20dp"/>
     </LinearLayout>
-</ScrollView>
+</RelativeLayout>

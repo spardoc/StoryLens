@@ -15,6 +15,7 @@ import android.text.style.ClickableSpan;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.*;
+import android.view.LayoutInflater;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -260,10 +261,17 @@ public class MainActivity extends AppCompatActivity implements ImageAdapter.OnIm
     }
 
     private void showSelectionDialog(int partIndex) {
+        String[] options = StoryConstants.options[partIndex];
+
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, R.layout.dialog_item_paper, options);
+
+        LayoutInflater inflater = LayoutInflater.from(this);
+        View customTitle = inflater.inflate(R.layout.dialog_title, null);  // dialog_title.xml con tu estilo
+
         new AlertDialog.Builder(this)
-                .setTitle("Selecciona una opción")
-                .setItems(StoryConstants.options[partIndex], (dialog, which) -> {
-                    currentSelections[partIndex] = StoryConstants.options[partIndex][which];
+                .setCustomTitle(customTitle)
+                .setAdapter(adapter, (dialog, which) -> {
+                    currentSelections[partIndex] = options[which];
                     buildInteractiveStory();
                 })
                 .show();

@@ -3,9 +3,10 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@drawable/screen_2">
 
-    <!-- Live camera preview -->
+    <!-- Vista previa de la cámara en vivo -->
     <androidx.camera.view.PreviewView
         android:id="@+id/previewView"
         android:layout_width="0dp"
@@ -13,9 +14,9 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- Captured image overlay -->
+    <!-- Imagen capturada sobre la vista previa -->
     <ImageView
         android:id="@+id/imageCaptureView"
         android:layout_width="0dp"
@@ -27,7 +28,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- Capture button -->
+    <!-- Botón de captura -->
     <ImageButton
         android:id="@+id/btnCapture"
         android:layout_width="100dp"
@@ -42,31 +43,50 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
-
-    <!-- Confirm and Retry buttons -->
     <LinearLayout
         android:id="@+id/controlsLayout"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:visibility="gone"
+        android:padding="8dp"
+        android:gravity="center"
+        android:layout_marginTop="16dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintVertical_bias="0.95">
 
-        <Button
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnRetry"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:backgroundTint="#f43f3f"
-            android:text="Repetir" />
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:text="Repetir"
+            android:background="@drawable/comic_button_red"
+            android:textColor="#FFFFFF"
+            android:fontFamily="@font/comicneue_bold"
+            android:drawableStart="@drawable/ic_retry"
+            android:drawableTint="#FFFFFF"
+            android:drawablePadding="8dp"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:layout_marginEnd="8dp"/>
 
-        <Button
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnConfirm"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:backgroundTint="#95f682"
-            android:text="Confirmar" />
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:text="Confirmar"
+            android:background="@drawable/comic_button_green"
+            android:textColor="#FFFFFF"
+            android:fontFamily="@font/comicneue_bold"
+            android:drawableStart="@drawable/ic_check"
+            android:drawableTint="#FFFFFF"
+            android:drawablePadding="8dp"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:layout_marginStart="8dp"/>
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -2,14 +2,15 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/composeContainer"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@drawable/screen_2">
 
     <!-- Imagen base de DALL·E, ocupa todo el fondo -->
     <ImageView
         android:id="@+id/baseImageView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:scaleType="fitCenter"/>
+        android:scaleType="fitCenter" />
 
     <!-- Viñeta de texto draggable -->
     <ImageView
@@ -18,16 +19,22 @@
         android:layout_height="200dp"
         android:layout_gravity="top|start"
         android:visibility="gone"
-        android:contentDescription="Viñeta de texto"/>
+        android:contentDescription="Viñeta de texto" />
 
-    <!-- Botón para “Confirmar composición” si quieres bloquear posición -->
-    <Button
+    <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/btnFinishCompose"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:backgroundTint="#95f682"
         android:text="Finalizar"
-        android:layout_gravity="bottom|center_horizontal"
-        android:layout_margin="16dp"/>
-
+        android:layout_gravity="bottom"
+        android:layout_margin="24dp"
+        android:background="@drawable/comic_button_green"
+        android:textColor="#FFFFFF"
+        android:fontFamily="@font/comicneue_bold"
+        android:textSize="18sp"
+        android:drawableStart="@drawable/ic_check"
+        android:drawableTint="#FFFFFF"
+        android:drawablePadding="8dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp" />
 </FrameLayout>

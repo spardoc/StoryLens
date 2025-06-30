@@ -6,6 +6,7 @@ import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.view.MotionEvent;
 import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
@@ -49,7 +50,16 @@ public class SelectFrameActivity extends AppCompatActivity {
         frameContainer  = findViewById(R.id.frameContainer);
         imagePreview    = findViewById(R.id.imagePreview);
         drawingView     = findViewById(R.id.drawingView);
-        spinnerShape    = findViewById(R.id.spinnerShape);
+        spinnerShape = findViewById(R.id.spinnerShape);
+
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
+                this,
+                R.array.shape_options,
+                R.layout.spinner_item);
+
+        adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
+
+        spinnerShape.setAdapter(adapter);
         btnConfirm      = findViewById(R.id.btnConfirm);
 
         // Carga imagen de texto (burbuja sin trazo)

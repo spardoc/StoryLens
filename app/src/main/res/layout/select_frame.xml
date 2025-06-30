@@ -5,7 +5,8 @@
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="8dp"
+    android:background="@drawable/screen_2"
+    android:padding="16dp"
     android:clipChildren="false"
     android:clipToPadding="false"
     tools:context=".drawing.SelectFrameActivity">
@@ -34,19 +35,30 @@
             android:background="@android:color/transparent" />
     </FrameLayout>
 
-    <!-- Spinner para seleccionar el contorno -->
     <Spinner
         android:id="@+id/spinnerShape"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:entries="@array/shape_options" />
+        android:entries="@array/shape_options"
+        android:layout_marginTop="12dp"
+        android:popupBackground="#FFFFFF"
+        android:padding="12dp"
+        android:fontFamily="@font/comicneue_regular" />
 
     <!-- Botón para confirmar el dibujo de la viñeta -->
-    <Button
+    <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/btnConfirm"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="48dp"
         android:text="Listo"
-        android:backgroundTint="#95f682"
-        android:layout_marginTop="8dp" />
+        android:layout_marginTop="12dp"
+        android:background="@drawable/comic_button_green"
+        android:textColor="#FFFFFF"
+        android:fontFamily="@font/comicneue_bold"
+        android:textSize="18sp"
+        android:drawableStart="@drawable/ic_check"
+        android:drawableTint="#FFFFFF"
+        android:drawablePadding="8dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"/>
 </LinearLayout>

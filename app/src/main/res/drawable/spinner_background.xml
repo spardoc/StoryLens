@@ -1,4 +1,19 @@
-<?xml version="1.0" encoding="utf-8"?>
-<selector xmlns:android="http://schemas.android.com/apk/res/android">
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
 
-</selector>
+    <!-- Fondo del spinner -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#FDFDFD" />
+            <stroke android:width="2dp" android:color="#CCCCCC" />
+            <corners android:radius="12dp" />
+        </shape>
+    </item>
+
+    <!-- Icono flecha desplegable -->
+    <item android:gravity="center_vertical|end" android:right="12dp">
+        <bitmap
+            android:src="@drawable/ic_arrow_drop_down"
+        android:gravity="center_vertical|end" />
+    </item>
+
+</layer-list>
