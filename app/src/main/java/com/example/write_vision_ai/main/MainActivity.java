@@ -161,7 +161,7 @@ public class MainActivity extends AppCompatActivity implements ImageAdapter.OnIm
             // Mostrar diálogo de carga
             AlertDialog loadingDialog = new AlertDialog.Builder(this)
                     .setMessage("Generando imágenes...")
-                    .setCancelable(false) // Evita que el usuario lo cancele
+                    .setCancelable(false)
                     .create();
             loadingDialog.show();
 
@@ -177,7 +177,7 @@ public class MainActivity extends AppCompatActivity implements ImageAdapter.OnIm
                         public void onAllImagesGenerated() {
                             runOnUiThread(() -> {
                                 if (loadingDialog.isShowing()) {
-                                    loadingDialog.dismiss(); // Cerrar diálogo al terminar
+                                    loadingDialog.dismiss();
                                 }
                             });
                         }
@@ -186,7 +186,7 @@ public class MainActivity extends AppCompatActivity implements ImageAdapter.OnIm
                         public void onError(String error) {
                             runOnUiThread(() -> {
                                 if (loadingDialog.isShowing()) {
-                                    loadingDialog.dismiss(); // Cerrar diálogo si hay error
+                                    loadingDialog.dismiss();
                                 }
                                 Toast.makeText(MainActivity.this, error, Toast.LENGTH_SHORT).show();
                             });
@@ -195,9 +195,13 @@ public class MainActivity extends AppCompatActivity implements ImageAdapter.OnIm
             );
             imageGenerator.generateImages();
 
-            ScrollView storyScroll = findViewById(R.id.storyScroll);
-            storyScroll.setVisibility(View.GONE);
+            // Ocultar/mostrar secciones
+            LinearLayout storySection = findViewById(R.id.storySection);
+            FrameLayout resultsSection = findViewById(R.id.resultsSection);
+
+            storySection.setVisibility(View.GONE);
             resultsSection.setVisibility(View.VISIBLE);
+
             recyclerView.post(() -> recyclerView.smoothScrollToPosition(0));
         });
 

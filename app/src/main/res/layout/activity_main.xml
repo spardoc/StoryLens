@@ -8,108 +8,115 @@
     android:background="@drawable/screen_2"
     tools:context=".main.MainActivity">
 
-    <!-- Header en ScrollView -->
-    <ScrollView
-        android:id="@+id/storyScroll"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:fillViewport="true"
-        android:padding="8dp">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-
-            <!-- Header -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:paddingBottom="8dp">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Crea tu Historia"
-                    android:textSize="24sp"
-                    android:textColor="#333333"
-                    android:textStyle="bold"
-                    android:fontFamily="@font/comicneue_bold"/>
-
-                <androidx.appcompat.widget.AppCompatButton
-                    android:id="@+id/btnLogout"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Cerrar sesión"
-                    android:background="@drawable/comic_button_red"
-                    android:textColor="#FFFFFF"
-                    android:fontFamily="@font/comicneue_bold"
-                    android:drawableStart="@drawable/ic_logout"
-                    android:drawableTint="#FFFFFF"
-                    android:drawablePadding="8dp" />
-            </LinearLayout>
-
-        </LinearLayout>
-    </ScrollView>
-
-    <!-- Contenedor texto informativo + historia + botón -->
+    <!-- Sección de creación de historia (con ID agregado) -->
     <LinearLayout
+        android:id="@+id/storySection"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:orientation="vertical"
-        android:padding="16dp"
-        android:gravity="center_horizontal">
+        android:orientation="vertical">
 
-        <!-- Texto informativo justo arriba de la historia -->
-        <TextView
+        <!-- ScrollView para el encabezado -->
+        <ScrollView
+            android:id="@+id/storyScroll"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Personaliza tu historia para que sea única y divertida :)"
-            android:textSize="18sp"
-            android:textColor="#555555"
-            android:gravity="center"
-            android:fontFamily="@font/comicneue_regular"
-            android:layout_marginBottom="12dp"/>
+            android:fillViewport="true"
+            android:padding="8dp">
 
-        <!-- Contenedor historia centrado y con fondo degradado -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- Header -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingBottom="8dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Crea tu Historia"
+                        android:textSize="24sp"
+                        android:textColor="#333333"
+                        android:textStyle="bold"
+                        android:fontFamily="@font/comicneue_bold"/>
+
+                    <androidx.appcompat.widget.AppCompatButton
+                        android:id="@+id/btnLogout"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Cerrar sesión"
+                        android:background="@drawable/comic_button_red"
+                        android:textColor="#FFFFFF"
+                        android:fontFamily="@font/comicneue_bold"
+                        android:drawableStart="@drawable/ic_logout"
+                        android:drawableTint="#FFFFFF"
+                        android:drawablePadding="8dp" />
+                </LinearLayout>
+            </LinearLayout>
+        </ScrollView>
+
+        <!-- Contenedor texto informativo + historia + botón -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:background="@drawable/bg_textview_gradient"
-            android:gravity="center"
             android:orientation="vertical"
-            android:padding="24dp"
-            android:clipToPadding="false">
+            android:padding="16dp"
+            android:gravity="center_horizontal">
 
+            <!-- Texto informativo -->
             <TextView
-                android:id="@+id/tvInteractiveStory"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:text="Personaliza tu historia para que sea única y divertida :)"
                 android:textSize="18sp"
-                android:textColor="#333333"
-                android:fontFamily="@font/comicneue_regular" />
-        </LinearLayout>
+                android:textColor="#555555"
+                android:gravity="center"
+                android:fontFamily="@font/comicneue_regular"
+                android:layout_marginBottom="12dp"/>
 
-        <androidx.appcompat.widget.AppCompatButton
-            android:id="@+id/btnGenerate"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:text="Generar imágenes"
-            android:layout_marginTop="16dp"
-            android:background="@drawable/comic_button_green"
-            android:fontFamily="@font/comicneue_bold"
-            android:textColor="#FFFFFF"
-            android:drawableStart="@drawable/ic_generate"
-            android:drawableTint="#FFFFFF"
-            android:drawablePadding="8dp"
-            android:paddingStart="12dp"
-            android:paddingEnd="12dp"
-        />
+            <!-- Contenedor historia -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_textview_gradient"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="24dp"
+                android:clipToPadding="false">
+
+                <TextView
+                    android:id="@+id/tvInteractiveStory"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="18sp"
+                    android:textColor="#333333"
+                    android:fontFamily="@font/comicneue_regular" />
+            </LinearLayout>
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnGenerate"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:text="Generar imágenes"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/comic_button_green"
+                android:fontFamily="@font/comicneue_bold"
+                android:textColor="#FFFFFF"
+                android:drawableStart="@drawable/ic_generate"
+                android:drawableTint="#FFFFFF"
+                android:drawablePadding="8dp"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"/>
+        </LinearLayout>
     </LinearLayout>
 
     <!-- Sección de resultados (inicialmente oculta) -->
@@ -172,5 +179,4 @@
                 android:paddingEnd="12dp"/>
         </LinearLayout>
     </FrameLayout>
-
 </LinearLayout>
