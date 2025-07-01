@@ -9,4 +9,6 @@
     <color name="white">#FFFFFFFF</color>
     <color name="gray_200">#918F92</color>
     <color name="azul_status">#0a385f</color>
+    <color name="comic_blue">#4285F4</color>
+    <color name="comic_red">#EA4335</color>
 </resources>

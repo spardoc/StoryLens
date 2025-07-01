@@ -158,11 +158,8 @@ public class MainActivity extends AppCompatActivity implements ImageAdapter.OnIm
                 return;
             }
 
-            // Mostrar diálogo de carga
-            AlertDialog loadingDialog = new AlertDialog.Builder(this)
-                    .setMessage("Generando imágenes...")
-                    .setCancelable(false)
-                    .create();
+            // Mostrar diálogo de carga personalizado
+            AlertDialog loadingDialog = createComicLoadingDialog();
             loadingDialog.show();
 
             ImageGenerator imageGenerator = new ImageGenerator(
@@ -179,6 +176,14 @@ public class MainActivity extends AppCompatActivity implements ImageAdapter.OnIm
                                 if (loadingDialog.isShowing()) {
                                     loadingDialog.dismiss();
                                 }
+                                // Ocultar/mostrar secciones
+                                LinearLayout storySection = findViewById(R.id.storySection);
+                                FrameLayout resultsSection = findViewById(R.id.resultsSection);
+
+                                storySection.setVisibility(View.GONE);
+                                resultsSection.setVisibility(View.VISIBLE);
+
+                                recyclerView.post(() -> recyclerView.smoothScrollToPosition(0));
                             });
                         }
 
@@ -194,15 +199,6 @@ public class MainActivity extends AppCompatActivity implements ImageAdapter.OnIm
                     }
             );
             imageGenerator.generateImages();
-
-            // Ocultar/mostrar secciones
-            LinearLayout storySection = findViewById(R.id.storySection);
-            FrameLayout resultsSection = findViewById(R.id.resultsSection);
-
-            storySection.setVisibility(View.GONE);
-            resultsSection.setVisibility(View.VISIBLE);
-
-            recyclerView.post(() -> recyclerView.smoothScrollToPosition(0));
         });
 
         setupExportPdfButton();
@@ -318,6 +314,24 @@ public class MainActivity extends AppCompatActivity implements ImageAdapter.OnIm
                 .setNegativeButton("Cancelar", null)
                 .show();
     }
+
+    private AlertDialog createComicLoadingDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.ComicDialogTheme);
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_loading, null);
+
+        // Personaliza el mensaje si lo deseas
+        TextView tvMessage = dialogView.findViewById(R.id.tvLoadingMessage);
+        TextView tvSubtext = dialogView.findViewById(R.id.tvLoadingSubtext);
+
+        builder.setView(dialogView);
+        builder.setCancelable(false);
+
+        AlertDialog dialog = builder.create();
+        dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        return dialog;
+    }
+
+
 
     private void saveImageToGallery(String imageUrl) {
         // Implementación para guardar imagen

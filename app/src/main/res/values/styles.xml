@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="ComicDialogTheme" parent="Theme.AppCompat.Light.Dialog.Alert">
+        <item name="colorPrimary">@color/comic_blue</item>
+        <item name="colorAccent">@color/comic_red</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="android:windowIsFloating">true</item>
+        <item name="android:windowAnimationStyle">@style/ComicDialogAnimation</item>
+    </style>
+
+    <style name="ComicDialogAnimation">
+        <item name="android:windowEnterAnimation">@anim/comic_dialog_enter</item>
+        <item name="android:windowExitAnimation">@anim/comic_dialog_exit</item>
+    </style>
+
+</resources>
