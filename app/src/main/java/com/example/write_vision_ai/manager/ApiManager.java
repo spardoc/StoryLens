@@ -14,9 +14,9 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class ApiManager {
     public static ApiService createApiService() {
         OkHttpClient client = new OkHttpClient.Builder()
-                .connectTimeout(30, TimeUnit.SECONDS)
-                .writeTimeout(30, TimeUnit.SECONDS)
-                .readTimeout(30, TimeUnit.SECONDS)
+                .connectTimeout(200, TimeUnit.SECONDS)
+                .writeTimeout(200, TimeUnit.SECONDS)
+                .readTimeout(200, TimeUnit.SECONDS)
                 .addInterceptor(chain -> {
                     Request request = chain.request();
                     Log.d("API_REQUEST", "Request URL: " + request.url());
